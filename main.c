@@ -35,11 +35,7 @@ int rpl_init(void){
 
 	// Initialize root node
 	ipv6_addr_from_str(&addr, "2001:db8::1");
-	gnrc_rpl_root_init	(	0,
-							&addr,
-							true,
-							false 
-						);		
+	gnrc_rpl_root_init(0, &addr, true, false);
 
     return 0;
 }
