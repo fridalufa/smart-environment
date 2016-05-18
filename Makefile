@@ -15,40 +15,39 @@ BOARD ?= native
 # This has to be the absolute path to the RIOT base directory:
 RIOTBASE ?= $(CURDIR)/../RIOT
 
-# Uncomment this to enable scheduler statistics for ps:
-#CFLAGS += -DSCHEDSTATISTICS
+BOARD_INSUFFICIENT_MEMORY := airfy-beacon chronos msb-430 msb-430h nrf51dongle \
+                          nrf6310 nucleo-f103 nucleo-f334 pca10000 pca10005 spark-core \
+                          stm32f0discovery telosb weio wsn430-v1_3b wsn430-v1_4 \
+                          yunjia-nrf51822 z1 nucleo-f072
 
-# If you want to use native with valgrind, you should recompile native
-# with the target all-valgrind instead of all:
-# make -B clean all-valgrind
+# Include packages that pull up and auto-init the link layer.
+# NOTE: 6LoWPAN will be included if IEEE802.15.4 devices are present
+USEMODULE += gnrc_netdev_default
+USEMODULE += auto_init_gnrc_netif
+# Specify the mandatory networking modules for IPv6 and UDP
+USEMODULE += gnrc_ipv6_router_default
+USEMODULE += gnrc_udp
+# Add a routing protocol
+USEMODULE += gnrc_rpl
+# This application dumps received packets to STDIO using the pktdump module
+USEMODULE += gnrc_pktdump
+# Additional networking modules that can be dropped if not needed
+USEMODULE += gnrc_icmpv6_echo
+# Add also the shell, some shell commands
+USEMODULE += shell
+USEMODULE += shell_commands
+USEMODULE += ps
 
-# Uncomment this to enable code in RIOT that does safety checking
+# Comment this out to disable code in RIOT that does safety checking
 # which is not needed in a production environment but helps in the
 # development process:
-#CFLAGS += -DDEVELHELP
+CFLAGS += -DDEVELHELP
+
+# Comment this out to join RPL DODAGs even if DIOs do not contain
+# DODAG Configuration Options (see the doc for more info)
+# CFLAGS += -DGNRC_RPL_DODAG_CONF_OPTIONAL_ON_JOIN
 
 # Change this to 0 show compiler invocation lines by default:
 QUIET ?= 1
 
-# Modules to include:
-
-#USEMODULE += shell
-#USEMODULE += posix
-#USEMODULE += xtimer
-
-# If your application is very simple and doesn't use modules that use
-# messaging, it can be disabled to save some memory:
-
-#DISABLE_MODULE += core_msg
-
-#export INCLUDES += -Iapplication_include
-
-# Specify custom dependencies for your application here ...
-# APPDEPS = app_data.h config.h
-
 include $(RIOTBASE)/Makefile.include
-
-# ... and define them here (after including Makefile.include,
-# otherwise you modify the standard target):
-#proj_data.h: script.py data.tar.gz
-#	./script.py

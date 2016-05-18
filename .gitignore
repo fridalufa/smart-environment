@@ -33,3 +33,4 @@
 
 # Exclude binary files
 bin
+*.sublime-workspace
