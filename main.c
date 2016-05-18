@@ -35,21 +35,21 @@ int create_interface(void) {
     return 0;
 }
 
-int rpl_init(void){
+int rpl_init(void) {
 
     if (ipv6_addr_from_str(&addr, link_addr) == NULL) {
         puts("error: unable to parse IPv6 address.");
         return 1;
     };
 
-	// Message Queue for receiving potentially fast incoming networking packets
+    // Message Queue for receiving potentially fast incoming networking packets
     msg_init_queue(_main_msg_queue, MAIN_QUEUE_SIZE);
 
     create_interface();
 
     // Check if interface exists
     gnrc_ipv6_netif_t *entry = NULL;
-    
+
     entry = gnrc_ipv6_netif_get(iface_pid);
 
     if (entry == NULL) {
@@ -60,7 +60,7 @@ int rpl_init(void){
     // RPL init
     gnrc_rpl_init(6);
 
-	// Initialize root node
+    // Initialize root node
     ipv6_addr_from_str(&addr, link_addr);
     gnrc_rpl_root_init(0, &addr, true, false);
 
@@ -69,13 +69,16 @@ int rpl_init(void){
 
 int main(void)
 {
-	printf("Hello Smart Environment!\n");
+    printf("Hello Smart Environment!\n");
 
-	// Initialize RPL
-	rpl_init();
+    // Initialize RPL
+    if (rpl_init() == 1) {
+        // Initialization failed!
+        return 1;
+    }
 
-	// Taken from the hello world example!
-	printf("You are running RIOT on a(n) %s board.\n", RIOT_BOARD);
+    // Taken from the hello world example!
+    printf("You are running RIOT on a(n) %s board.\n", RIOT_BOARD);
     printf("This board features a(n) %s MCU.\n", RIOT_MCU);
 
     char line_buf[SHELL_DEFAULT_BUFSIZE];
