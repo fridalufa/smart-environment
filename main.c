@@ -13,10 +13,9 @@ kernel_pid_t iface_pid = 6;
 
 ipv6_addr_t addr;
 
-int create_interface(void)
+int configure_global_ipv6_address(void)
 {
-
-    // Create global interface 6
+    // add a global IPv6 address for the root node
     uint8_t prefix_len, flags = 0;
     ipv6_addr_t* ifaddr;
 
@@ -36,7 +35,7 @@ int create_interface(void)
     return 0;
 }
 
-int rpl_init(void)
+int rpl_init(bool isRootNode)
 {
 
     if (ipv6_addr_from_str(&addr, link_addr) == NULL) {
@@ -47,7 +46,9 @@ int rpl_init(void)
     // Message Queue for receiving potentially fast incoming networking packets
     msg_init_queue(_main_msg_queue, MAIN_QUEUE_SIZE);
 
-    create_interface();
+    if (isRootNode) {
+        configure_global_ipv6_address();
+    }
 
     // Check if interface exists
     gnrc_ipv6_netif_t* entry = NULL;
@@ -60,11 +61,13 @@ int rpl_init(void)
     }
 
     // RPL init
-    gnrc_rpl_init(6);
+    gnrc_rpl_init(iface_pid);
 
-    // Initialize root node
-    ipv6_addr_from_str(&addr, link_addr);
-    gnrc_rpl_root_init(0, &addr, true, false);
+    // Initialize root node if necessary
+    if (isRootNode && gnrc_rpl_root_init(0, &addr, true, false) == NULL) {
+        puts("failed to initialize node as root node");
+        return 1;
+    }
 
     return 0;
 }
@@ -73,9 +76,10 @@ int main(void)
 {
     printf("Hello Smart Environment!\n");
 
+    bool isRootNode = (getenv("MODE") != NULL) && (strcmp(getenv("MODE"), "root") == 0);
     // Initialize RPL
-    if (rpl_init() == 1) {
-        // Initialization failed!
+    if (rpl_init(isRootNode) == 1) {
+        puts("error: unable to initialize RPL");
         return 1;
     }
 
