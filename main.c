@@ -11,16 +11,36 @@ static msg_t _main_msg_queue[MAIN_QUEUE_SIZE];
 char* link_addr = "2001:db8::1";
 kernel_pid_t iface_pid = 6;
 
-extern int _netif_config(int argc, char** argv);
+ipv6_addr_t addr;
 
-void create_interface() {
-	// Create global interface 6
-    char* args[] = {"ifconfig","6","add",link_addr};
-    _netif_config(4, args);
+int create_interface(void) {
+
+    // Create global interface 6
+    uint8_t prefix_len, flags = 0;
+    ipv6_addr_t *ifaddr;
+
+    prefix_len = ipv6_addr_split(link_addr, '/', 64);
+    flags = GNRC_IPV6_NETIF_ADDR_FLAGS_NDP_AUTO | GNRC_IPV6_NETIF_ADDR_FLAGS_UNICAST;
+
+    if ((ifaddr = gnrc_ipv6_netif_add_addr(iface_pid, &addr, prefix_len, flags)) == NULL) {
+        printf("error: unable to add IPv6 address\n");
+        return 1;
+    }
+
+    // Address shall be valid infinitely
+    gnrc_ipv6_netif_addr_get(ifaddr)->valid = UINT32_MAX;
+    // Address shall be preferred infinitely
+    gnrc_ipv6_netif_addr_get(ifaddr)->preferred = UINT32_MAX;
+
+    return 0;
 }
 
 int rpl_init(void){
-	ipv6_addr_t addr;
+
+    if (ipv6_addr_from_str(&addr, link_addr) == NULL) {
+        puts("error: unable to parse IPv6 address.");
+        return 1;
+    };
 
 	// Message Queue for receiving potentially fast incoming networking packets
     msg_init_queue(_main_msg_queue, MAIN_QUEUE_SIZE);
@@ -38,11 +58,11 @@ int rpl_init(void){
     }
 
     // RPL init
-	gnrc_rpl_init(6);
+    gnrc_rpl_init(6);
 
 	// Initialize root node
-	ipv6_addr_from_str(&addr, link_addr);
-	gnrc_rpl_root_init(0, &addr, true, false);
+    ipv6_addr_from_str(&addr, link_addr);
+    gnrc_rpl_root_init(0, &addr, true, false);
 
     return 0;
 }
@@ -61,5 +81,5 @@ int main(void)
     char line_buf[SHELL_DEFAULT_BUFSIZE];
     shell_run(NULL, line_buf, SHELL_DEFAULT_BUFSIZE);
 
-	return 0;
+    return 0;
 }
