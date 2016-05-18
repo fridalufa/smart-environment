@@ -13,11 +13,12 @@ kernel_pid_t iface_pid = 6;
 
 ipv6_addr_t addr;
 
-int create_interface(void) {
+int create_interface(void)
+{
 
     // Create global interface 6
     uint8_t prefix_len, flags = 0;
-    ipv6_addr_t *ifaddr;
+    ipv6_addr_t* ifaddr;
 
     prefix_len = ipv6_addr_split(link_addr, '/', 64);
     flags = GNRC_IPV6_NETIF_ADDR_FLAGS_NDP_AUTO | GNRC_IPV6_NETIF_ADDR_FLAGS_UNICAST;
@@ -35,7 +36,8 @@ int create_interface(void) {
     return 0;
 }
 
-int rpl_init(void) {
+int rpl_init(void)
+{
 
     if (ipv6_addr_from_str(&addr, link_addr) == NULL) {
         puts("error: unable to parse IPv6 address.");
@@ -48,7 +50,7 @@ int rpl_init(void) {
     create_interface();
 
     // Check if interface exists
-    gnrc_ipv6_netif_t *entry = NULL;
+    gnrc_ipv6_netif_t* entry = NULL;
 
     entry = gnrc_ipv6_netif_get(iface_pid);
 

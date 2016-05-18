@@ -11,6 +11,14 @@
 	"settings":
 	{
 		"tab_size": 4,
-    	"translate_tabs_to_spaces": true
+    	"translate_tabs_to_spaces": true,
+        "AStyleFormatter":
+        {
+            "autoformat_on_save": true,
+            "options_default": {
+                "style": "kr",
+                "align-pointer": "type"
+            }
+        }
 	}
 }
