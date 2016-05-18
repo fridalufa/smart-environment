@@ -48,6 +48,7 @@ int main(void)
 {
 	printf("Hello Smart Environment!\n");
 
+	// Initialize RPL
 	rpl_init();
 
 	// Taken from the hello world example!
