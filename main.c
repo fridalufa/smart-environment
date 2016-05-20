@@ -4,14 +4,24 @@
 #include "msg.h"
 #include "thread.h"
 #include "setup.h"
+#include "coap_server.h"
 
 #define MAIN_QUEUE_SIZE     (8)
 static msg_t _main_msg_queue[MAIN_QUEUE_SIZE];
 
-char _rcv_stack_buf[KERNEL_CONF_STACKSIZE_MAIN];
+char _rcv_stack_buf[THREAD_STACKSIZE_DEFAULT];
 
 char* link_addr = "2001:db8::1";
 kernel_pid_t iface_pid = 6;
+
+static void* _coap_server_thread(void* arg)
+{
+    (void)arg;
+
+    coap_server_loop();
+
+    return NULL;
+}
 
 int main(void)
 {
@@ -36,7 +46,7 @@ int main(void)
     }
 
     if (isRootNode) {
-        thread_create(_rcv_stack_buf, KERNEL_CONF_STACKSIZE_MAIN, PRIORITY_MAIN, CREATE_STACKTEST, _coap_server_thread, NULL , "_coap_server_thread");
+        thread_create(_rcv_stack_buf, THREAD_STACKSIZE_DEFAULT, THREAD_PRIORITY_MAIN - 1, 0, _coap_server_thread, NULL , "_coap_server_thread");
     }
 
     // Taken from the hello world example!
@@ -47,11 +57,4 @@ int main(void)
     shell_run(NULL, line_buf, SHELL_DEFAULT_BUFSIZE);
 
     return 0;
-}
-
-static void* _coap_server_thread(void* arg)
-{
-    (void)arg;
-
-    coap_server_loop(void);
 }

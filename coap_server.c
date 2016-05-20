@@ -1,4 +1,4 @@
-#include "server.h"
+#include "coap_server.h"
 
 static uint8_t _udp_buf[512];   /* udp read buffer (max udp payload size) */
 uint8_t scratch_raw[1024];      /* microcoap scratch buffer */

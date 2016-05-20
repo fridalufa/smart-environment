@@ -3,7 +3,7 @@
 
 #include "net/af.h"
 #include "net/conn/udp.h"
-#include "coap.h"
+#include <coap.h>
 
 #ifdef MICROCOAP_DEBUG
 #define ENABLE_DEBUG (1)
