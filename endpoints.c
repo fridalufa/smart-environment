@@ -14,11 +14,9 @@ static int handle_get_riot_board(coap_rw_buffer_t* scratch,
                                  coap_packet_t* outpkt,
                                  uint8_t id_hi, uint8_t id_lo);
 
-static const coap_endpoint_path_t path_well_known_core =
-{ 2, { ".well-known", "core" } };
+static const coap_endpoint_path_t path_well_known_core = { 2, { ".well-known", "core" } };
 
-static const coap_endpoint_path_t path_riot_board =
-{ 2, { "riot", "board" } };
+static const coap_endpoint_path_t path_riot_board = { 2, { "riot", "board" } };
 
 const coap_endpoint_t endpoints[] = {
     {
@@ -37,6 +35,9 @@ static int handle_get_well_known_core(coap_rw_buffer_t* scratch,
                                       const coap_packet_t* inpkt, coap_packet_t* outpkt,
                                       uint8_t id_hi, uint8_t id_lo)
 {
+    // Clear out the previous response, if any
+    memset(response, 0, sizeof(response));
+
     char* rsp = (char*)response;
     int len = sizeof(response);
     const coap_endpoint_t* ep = endpoints;
@@ -75,7 +76,7 @@ static int handle_get_well_known_core(coap_rw_buffer_t* scratch,
         ep++;
     }
 
-    return coap_make_response(scratch, outpkt, (const uint8_t*)rsp,
+    return coap_make_response(scratch, outpkt, (const uint8_t*)response,
                               strlen(rsp), id_hi, id_lo, &inpkt->tok,
                               COAP_RSPCODE_CONTENT,
                               COAP_CONTENTTYPE_APPLICATION_LINKFORMAT);

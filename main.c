@@ -17,20 +17,17 @@ static char _rcv_stack_buf[THREAD_STACKSIZE_DEFAULT];
 char* link_addr = "2001:db8::1";
 kernel_pid_t iface_pid = 6;
 
-static void* _coap_server_thread(void* arg)
-{
-    (void)arg;
-    msg_init_queue(_server_msg_queue, SERVER_QUEUE_SIZE);
-    puts("Server loop getting started\n");
+int coap_client(int argc, char** argv);
 
-    coap_server_loop();
+static const shell_command_t shell_commands[] = {
+    { "coap", "Send a coap request to the server and display response", coap_client },
+    { NULL, NULL, NULL }
+};
 
-    return NULL;
-}
+static void* _coap_server_thread(void* arg);
 
 int main(void)
 {
-    printf("Hello Smart Environment!\n");
 
     // Message Queue for receiving potentially fast incoming networking packets
     msg_init_queue(_main_msg_queue, MAIN_QUEUE_SIZE);
@@ -60,7 +57,27 @@ int main(void)
     printf("This board features a(n) %s MCU.\n", RIOT_MCU);
 
     char line_buf[SHELL_DEFAULT_BUFSIZE];
-    shell_run(NULL, line_buf, SHELL_DEFAULT_BUFSIZE);
+    shell_run(shell_commands, line_buf, SHELL_DEFAULT_BUFSIZE);
+
+    return 0;
+}
+
+static void* _coap_server_thread(void* arg)
+{
+    (void)arg;
+    msg_init_queue(_server_msg_queue, SERVER_QUEUE_SIZE);
+    puts("Launching server loop");
+
+    coap_server_loop();
+
+    return NULL;
+}
+
+int coap_client(int argc, char** argv)
+{
+    (void)argc;
+    (void)argv;
+    puts("Not yet implemented");
 
     return 0;
 }
