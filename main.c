@@ -9,7 +9,10 @@
 #define MAIN_QUEUE_SIZE     (8)
 static msg_t _main_msg_queue[MAIN_QUEUE_SIZE];
 
-char _rcv_stack_buf[THREAD_STACKSIZE_DEFAULT];
+#define SERVER_QUEUE_SIZE     (8)
+static msg_t _server_msg_queue[SERVER_QUEUE_SIZE];
+
+static char _rcv_stack_buf[THREAD_STACKSIZE_DEFAULT];
 
 char* link_addr = "2001:db8::1";
 kernel_pid_t iface_pid = 6;
@@ -17,6 +20,8 @@ kernel_pid_t iface_pid = 6;
 static void* _coap_server_thread(void* arg)
 {
     (void)arg;
+    msg_init_queue(_server_msg_queue, SERVER_QUEUE_SIZE);
+    puts("Server loop getting started\n");
 
     coap_server_loop();
 
@@ -46,6 +51,7 @@ int main(void)
     }
 
     if (isRootNode) {
+        puts("Launching coap server");
         thread_create(_rcv_stack_buf, THREAD_STACKSIZE_DEFAULT, THREAD_PRIORITY_MAIN - 1, 0, _coap_server_thread, NULL , "_coap_server_thread");
     }
 
