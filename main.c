@@ -5,6 +5,7 @@
 #include "thread.h"
 #include "setup.h"
 #include "coap_server.h"
+#include "coap_client.h"
 
 #define MAIN_QUEUE_SIZE     (8)
 static msg_t _main_msg_queue[MAIN_QUEUE_SIZE];
@@ -77,7 +78,11 @@ int coap_client(int argc, char** argv)
 {
     (void)argc;
     (void)argv;
-    puts("Not yet implemented");
+
+    ipv6_addr_t target;
+    ipv6_addr_from_str(&target, "2001:db8::1");
+
+    coap_client_send(&target, COAP_METHOD_GET, ".well-known/core", NULL);
 
     return 0;
 }
