@@ -4,6 +4,7 @@
 #include "msg.h"
 #include "thread.h"
 #include "setup.h"
+#include "time.h"
 #include "coap_server.h"
 #include "coap_client.h"
 
@@ -29,6 +30,9 @@ static void* _coap_server_thread(void* arg);
 
 int main(void)
 {
+
+    // initialize RNG
+    random_init(time(NULL));
 
     // Message Queue for receiving potentially fast incoming networking packets
     msg_init_queue(_main_msg_queue, MAIN_QUEUE_SIZE);
@@ -83,6 +87,8 @@ int coap_client(int argc, char** argv)
     ipv6_addr_from_str(&target, "2001:db8::1");
 
     coap_client_send(&target, COAP_METHOD_GET, ".well-known/core", NULL);
+
+    coap_client_receive();
 
     return 0;
 }
