@@ -3,8 +3,6 @@
 #define CLIENT_PORT 9293
 #define COAP_SERVER_PORT 5683
 
-static uint8_t _udp_buf[512];
-
 // TODO: refactor the header files, maybe create a single coap.h instead of a separate
 // header for both client and server
 
@@ -57,7 +55,7 @@ void coap_client_send(ipv6_addr_t* target, coap_method_t method, char* endpoint,
     pkt.hdr = (coap_header_t) {1, COAP_TYPE_CON, 0, method, {0, 0}};
     // generate a random 16 bit message id
     uint32_t r = random_uint32_range(0, 0xFFFF);
-    uint8_t id[] = {(r & 0xFF00) >> 8, r & 0xFF};
+    uint8_t id[] = {(r >> 8) & 0xFF , r & 0xFF};
     memcpy(pkt.hdr.id, id, 2);
 
     // add options
@@ -77,6 +75,7 @@ void coap_client_send(ipv6_addr_t* target, coap_method_t method, char* endpoint,
 
     // send the paket over UDP
     int rc = 0;
+    uint8_t _udp_buf[512] = {0};
     size_t pktlen = sizeof(_udp_buf);
     if ((rc = coap_build(_udp_buf, &pktlen, &pkt)) != 0) {
         DEBUG("coap_build failed rc=%d\n", rc);
@@ -96,31 +95,47 @@ void coap_client_send(ipv6_addr_t* target, coap_method_t method, char* endpoint,
 void coap_client_receive(void)
 {
     conn_udp_t conn;
+    uint8_t _udp_buf[512];
 
     // initialize connection
     uint8_t laddr[16] = {0};
     if (conn_udp_create(&conn, laddr, sizeof(laddr), AF_INET6, CLIENT_PORT) < 0) {
         DEBUG("Error creating udp connection");
+        return;
     }
 
     // receive an udp packet (blocking)
     int receivedBytes = conn_udp_recvfrom(&conn, (char*)_udp_buf, sizeof(_udp_buf), NULL, NULL, NULL);
     if (receivedBytes < 0) {
-        DEBUG("Error in conn_udp_recvfrom(). rc=%u\n", rc);
+        DEBUG("Error in conn_udp_recvfrom()");
+        return;
     }
 
     // parse the received udp packet into a CoAP packets
     size_t n = receivedBytes;
     coap_packet_t pkt;
+    int rc;
     if (0 != (rc = coap_parse(&pkt, _udp_buf, n))) {
         DEBUG("Bad packet rc=%d\n", rc);
+        return;
     }
 
     coap_dumpPacket(&pkt);
 
     // echo payload
-    // TODO: do something useful with the received packet
-    if (&pkt.payload != NULL) {
-        printf("%s\n", pkt.payload.p);
+    // TODO: do something useful with the received packet and improve handling
+
+    if (pkt.hdr.code == MAKE_RSPCODE(2, 5)) {
+        if (&pkt.payload != NULL) {
+            char buf[pkt.payload.len];
+            strncpy(buf, (char*) pkt.payload.p, pkt.payload.len);
+            printf("%s\n", buf);
+        }
+    } else {
+
+        uint8_t c = pkt.hdr.code >> 5;
+        uint8_t d = (pkt.hdr.code & 0x1F);
+
+        printf("An error occured! (Code: %u.%u)", c, d);
     }
 }
