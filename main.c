@@ -88,7 +88,7 @@ int coap_client(int argc, char** argv)
     ipv6_addr_t target;
     ipv6_addr_from_str(&target, "2001:db8::1");
 
-    coap_client_send(&target, COAP_METHOD_GET, ".well-known/core", NULL);
+    coap_client_send(&target, COAP_METHOD_GET, ".well-known/core");
 
     coap_client_receive();
 
@@ -106,7 +106,7 @@ int greet(int argc, char** argv)
     ipv6_addr_t target;
     ipv6_addr_from_str(&target, "2001:db8::1");
 
-    coap_client_send(&target, COAP_METHOD_POST, "greet", argv[1]);
+    coap_client_send_payload(&target, COAP_METHOD_POST, "greet", argv[1], COAP_CONTENTTYPE_TEXT_PLAIN);
 
     coap_client_receive();
 
