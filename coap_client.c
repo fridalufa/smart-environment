@@ -171,8 +171,9 @@ void coap_client_receive(void)
 
     if (pkt.hdr.code == MAKE_RSPCODE(2, 5)) {
         if (&pkt.payload != NULL) {
-            char buf[pkt.payload.len];
+            char buf[pkt.payload.len + 1];
             strncpy(buf, (char*) pkt.payload.p, pkt.payload.len);
+            buf[pkt.payload.len] = '\0';
             printf("%s\n", buf);
         }
     } else {
