@@ -20,9 +20,11 @@ char* link_addr = "2001:db8::1";
 kernel_pid_t iface_pid = 6;
 
 int coap_client(int argc, char** argv);
+int greet(int argc, char** argv);
 
 static const shell_command_t shell_commands[] = {
     { "coap", "Send a coap request to the server and display response", coap_client },
+    { "greet", "Let the server greet you via a CoAP POST request", greet },
     { NULL, NULL, NULL }
 };
 
@@ -87,6 +89,24 @@ int coap_client(int argc, char** argv)
     ipv6_addr_from_str(&target, "2001:db8::1");
 
     coap_client_send(&target, COAP_METHOD_GET, ".well-known/core", NULL);
+
+    coap_client_receive();
+
+    return 0;
+}
+
+int greet(int argc, char** argv)
+{
+
+    if (argc < 2) {
+        printf("Usage: %s <name>\n", argv[0]);
+        return 1;
+    }
+
+    ipv6_addr_t target;
+    ipv6_addr_from_str(&target, "2001:db8::1");
+
+    coap_client_send(&target, COAP_METHOD_POST, "greet", argv[1]);
 
     coap_client_receive();
 

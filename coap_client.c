@@ -7,12 +7,12 @@
 // header for both client and server
 
 /**
- * @brief constructs a CoAP packet and sends it to the targets endpoint via UDP
+ * @brief constructs a CoAP packet with a payload and sends it to the targets endpoint
  *
  * @param      target    The targets adress
  * @param[in]  method    The request method
  * @param      endpoint  The endpoint URI
- * @param      payload   Optional payload
+ * @param      payload   Payload
  */
 void coap_client_send(ipv6_addr_t* target, coap_method_t method, char* endpoint, char* payload)
 {
@@ -29,9 +29,11 @@ void coap_client_send(ipv6_addr_t* target, coap_method_t method, char* endpoint,
     }
 
     // construct option array containg the parts of the endpoint URI
-    coap_option_t opts[parts];
+    int numOptions = parts;
+    coap_option_t opts[numOptions];
+
     char* token = strtok(uri, "/");
-    int i = 0;
+    int i = (numOptions - parts);
     while (token != NULL) {
 
         coap_buffer_t optBuf = {
@@ -52,15 +54,22 @@ void coap_client_send(ipv6_addr_t* target, coap_method_t method, char* endpoint,
     coap_packet_t pkt = {0};
 
     // begin with constructing the header
-    pkt.hdr = (coap_header_t) {1, COAP_TYPE_CON, 0, method, {0, 0}};
+    pkt.hdr = (coap_header_t) {
+        1,             // CoAP protocol version
+        COAP_TYPE_CON, // this should be a confirmable message
+        0,             // token length (currently zero since we do not support tokens at the moment)
+        method,        // method to use
+        {0, 0}         // id placeholder, actual id gets generated below
+    };
+
     // generate a random 16 bit message id
     uint32_t r = random_uint32_range(0, 0xFFFF);
     uint8_t id[] = {(r >> 8) & 0xFF , r & 0xFF};
     memcpy(pkt.hdr.id, id, 2);
 
     // add options
-    pkt.numopts = parts;
-    memcpy(pkt.opts, opts , parts * sizeof(opts));
+    pkt.numopts = numOptions;
+    memcpy(pkt.opts, opts , numOptions * sizeof(opts));
 
     // add the payload if there is one
     if (payload != NULL) {
