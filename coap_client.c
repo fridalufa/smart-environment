@@ -138,4 +138,6 @@ void coap_client_receive(void)
 
         printf("An error occured! (Code: %u.%u)", c, d);
     }
+
+    conn_udp_close(&conn);
 }
