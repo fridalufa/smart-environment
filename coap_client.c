@@ -13,8 +13,10 @@
  * @param[in]  method    The request method
  * @param      endpoint  The endpoint URI
  * @param      payload   Payload
+ * @param      ct        Content type of the payload
  */
-void coap_client_send(ipv6_addr_t* target, coap_method_t method, char* endpoint, char* payload)
+void coap_client_send_payload(ipv6_addr_t* target, coap_method_t method,
+                              char* endpoint, char* payload, coap_content_type_t ct)
 {
 
     char uri[strlen(endpoint)];
@@ -28,12 +30,18 @@ void coap_client_send(ipv6_addr_t* target, coap_method_t method, char* endpoint,
         }
     }
 
-    // construct option array containg the parts of the endpoint URI
+    // if there is a payload add another option for the content type
     int numOptions = parts;
+    if (payload != NULL) {
+        numOptions += 1;
+    }
+
     coap_option_t opts[numOptions];
 
+    // construct option array containg the parts of the endpoint URI
+
     char* token = strtok(uri, "/");
-    int i = (numOptions - parts);
+    int i = 0;
     while (token != NULL) {
 
         coap_buffer_t optBuf = {
@@ -41,7 +49,7 @@ void coap_client_send(ipv6_addr_t* target, coap_method_t method, char* endpoint,
             strlen(token)
         };
         coap_option_t opt = {0};
-        opt.num = 11;
+        opt.num = COAP_OPTION_URI_PATH;
         opt.buf = optBuf;
 
         opts[i] = opt;
@@ -49,6 +57,21 @@ void coap_client_send(ipv6_addr_t* target, coap_method_t method, char* endpoint,
         i++;
         token = strtok(NULL, "/");
     }
+
+    // add content type option if necessary
+    if (payload != NULL) {
+
+        coap_buffer_t optBuf = {
+            (uint8_t*)& ct,
+            2
+        };
+        coap_option_t opt = {0};
+        opt.num = COAP_OPTION_CONTENT_FORMAT;
+        opt.buf = optBuf;
+
+        opts[i] = opt;
+    }
+
 
     // construct the packet
     coap_packet_t pkt = {0};
@@ -97,6 +120,18 @@ void coap_client_send(ipv6_addr_t* target, coap_method_t method, char* endpoint,
 }
 
 /**
+ * @brief      constructs a CoAP package without a payload and sends it to the targets endpoint
+ *
+ * @param      target    The target
+ * @param[in]  method    The method
+ * @param      endpoint  The endpoint
+ */
+void coap_client_send(ipv6_addr_t* target, coap_method_t method, char* endpoint)
+{
+    coap_client_send_payload(target, method, endpoint, NULL, COAP_CONTENTTYPE_TEXT_PLAIN);
+}
+
+/**
  * @brief      a simple receive function listening for an incoming udp packet on the client port.
  *             Then the function attempts to parse the packet as a CoAP packet. Upon success, the paylod
  *             will be echoed.
@@ -136,8 +171,9 @@ void coap_client_receive(void)
 
     if (pkt.hdr.code == MAKE_RSPCODE(2, 5)) {
         if (&pkt.payload != NULL) {
-            char buf[pkt.payload.len];
+            char buf[pkt.payload.len + 1];
             strncpy(buf, (char*) pkt.payload.p, pkt.payload.len);
+            buf[pkt.payload.len] = '\0';
             printf("%s\n", buf);
         }
     } else {
