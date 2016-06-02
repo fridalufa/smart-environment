@@ -3,16 +3,23 @@
 #include "shell.h"
 #include "msg.h"
 #include "thread.h"
-#include "time.h"
-
 #include "../shared/setup.h"
+#include "time.h"
+#include "coap_server.h"
 #include "../shared/coap_client.h"
 
 #define MAIN_QUEUE_SIZE     (8)
 static msg_t _main_msg_queue[MAIN_QUEUE_SIZE];
 
-char* link_addr = "2001:db8::1";
+#define SERVER_QUEUE_SIZE     (8)
+static msg_t _server_msg_queue[SERVER_QUEUE_SIZE];
+
+static char _rcv_stack_buf[THREAD_STACKSIZE_DEFAULT];
+
+char* rpl_root_addr = "2001:db8::1";
 kernel_pid_t iface_pid = 6;
+
+#define MULTICAST_ADDR "ff02::fc"
 
 int coap_client(int argc, char** argv);
 int greet(int argc, char** argv);
@@ -27,9 +34,12 @@ static const shell_command_t shell_commands[] = {
     { NULL, NULL, NULL }
 };
 
+static void* _coap_server_thread(void* arg);
+
 int main(void)
 {
-    puts("Smart Environment Sensor Application");
+
+    puts("Smart Environment Actor Application");
 
     // initialize RNG
     random_init(time(NULL));
@@ -45,9 +55,16 @@ int main(void)
     }
 
     if (!rpl_init(iface_pid)) {
-        puts("error: Unable to initialize RPL");
+        puts("error: unable to initialize RPL");
         return 1;
     }
+
+    puts("Joining multicast group on addr " MULTICAST_ADDR);
+
+    add_multicast_address(MULTICAST_ADDR, iface_pid);
+
+    puts("Launching coap server");
+    thread_create(_rcv_stack_buf, THREAD_STACKSIZE_DEFAULT, THREAD_PRIORITY_MAIN - 1, 0, _coap_server_thread, NULL , "_coap_server_thread");
 
     // Taken from the hello world example!
     printf("You are running RIOT on a(n) %s board.\n", RIOT_BOARD);
@@ -57,6 +74,17 @@ int main(void)
     shell_run(shell_commands, line_buf, SHELL_DEFAULT_BUFSIZE);
 
     return 0;
+}
+
+static void* _coap_server_thread(void* arg)
+{
+    (void)arg;
+    msg_init_queue(_server_msg_queue, SERVER_QUEUE_SIZE);
+    puts("Launching server loop");
+
+    coap_server_loop();
+
+    return NULL;
 }
 
 int coap_client(int argc, char** argv)
@@ -107,7 +135,7 @@ int mkroot(int argc, char** argv)
 {
     (void)argc;
     (void)argv;
-    if (!rpl_root_init(link_addr, iface_pid)) {
+    if (!rpl_root_init(rpl_root_addr, iface_pid)) {
         puts("Failed to make this node the rpl root");
         return 1;
     }
