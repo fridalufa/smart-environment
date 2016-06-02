@@ -69,9 +69,9 @@ bool rpl_root_init(char* link_addr, kernel_pid_t iface_pid)
 
     _configure_global_ipv6_address(link_addr, iface_pid);
 
-    if (!rpl_init(iface_pid)) {
+    /*if (!rpl_init(iface_pid)) {
         return false;
-    }
+    }*/
 
     // Initialize root node
     if (gnrc_rpl_root_init(0, &addr, true, false) == NULL) {

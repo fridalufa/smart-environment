@@ -22,11 +22,13 @@ kernel_pid_t iface_pid = 6;
 int coap_client(int argc, char** argv);
 int greet(int argc, char** argv);
 int selected_interface(int argc, char** argv);
+int mkroot(int argc, char** argv);
 
 static const shell_command_t shell_commands[] = {
     { "coap", "Send a coap request to the server and display response", coap_client },
     { "greet", "Let the server greet you via a CoAP POST request", greet },
     { "iface", "Show the interface used for network communication", selected_interface },
+    { "mkroot", "Make this node root of the rpl", mkroot },
     { NULL, NULL, NULL }
 };
 
@@ -50,13 +52,7 @@ int main(void)
 
     bool isRootNode = (getenv("MODE") != NULL) && (strcmp(getenv("MODE"), "root") == 0);
 
-    bool initialized = false;
-
-    if (isRootNode) {
-        initialized = rpl_root_init(link_addr, iface_pid);
-    } else {
-        initialized = rpl_init(iface_pid);
-    }
+    bool initialized = rpl_init(iface_pid);
 
     if (!initialized) {
         puts("error: unable to initialize RPL");
@@ -129,6 +125,20 @@ int selected_interface(int argc, char** argv)
     kernel_pid_t ifs = get_first_interface();
 
     printf("Using interface: %d\n", ifs);
+
+    return 0;
+}
+
+int mkroot(int argc, char** argv)
+{
+    (void)argc;
+    (void)argv;
+    if (!rpl_root_init(link_addr, iface_pid)) {
+        puts("Failed to make this node the rpl root");
+        return 1;
+    }
+
+    puts("Made this node the rpl root");
 
     return 0;
 }
