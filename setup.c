@@ -81,3 +81,18 @@ bool rpl_root_init(char* link_addr, kernel_pid_t iface_pid)
 
     return true;
 }
+
+kernel_pid_t get_first_interface(void)
+{
+    kernel_pid_t ifs[GNRC_NETIF_NUMOF];
+
+    puts("RIOT network stack example application");
+
+    size_t numof = gnrc_netif_get(ifs);
+
+    if (numof > 0) {
+        return ifs[0];
+    }
+
+    return -1;
+}

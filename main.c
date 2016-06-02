@@ -21,10 +21,12 @@ kernel_pid_t iface_pid = 6;
 
 int coap_client(int argc, char** argv);
 int greet(int argc, char** argv);
+int selected_interface(int argc, char** argv);
 
 static const shell_command_t shell_commands[] = {
     { "coap", "Send a coap request to the server and display response", coap_client },
     { "greet", "Let the server greet you via a CoAP POST request", greet },
+    { "iface", "Show the interface used for network communication", selected_interface },
     { NULL, NULL, NULL }
 };
 
@@ -38,6 +40,13 @@ int main(void)
 
     // Message Queue for receiving potentially fast incoming networking packets
     msg_init_queue(_main_msg_queue, MAIN_QUEUE_SIZE);
+
+    iface_pid = get_first_interface();
+
+    if (iface_pid < 0) {
+        puts("Unable to find an interface to use for wireless communication");
+        return 1;
+    }
 
     bool isRootNode = (getenv("MODE") != NULL) && (strcmp(getenv("MODE"), "root") == 0);
 
@@ -109,6 +118,17 @@ int greet(int argc, char** argv)
     coap_client_send_payload(&target, COAP_METHOD_POST, "greet", argv[1], COAP_CONTENTTYPE_TEXT_PLAIN);
 
     coap_client_receive();
+
+    return 0;
+}
+
+int selected_interface(int argc, char** argv)
+{
+    (void)argc;
+    (void)argv;
+    kernel_pid_t ifs = get_first_interface();
+
+    printf("Using interface: %d\n", ifs);
 
     return 0;
 }
