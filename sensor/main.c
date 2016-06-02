@@ -3,7 +3,7 @@
 #include "shell.h"
 #include "msg.h"
 #include "thread.h"
-#include "setup.h"
+#include "../shared/setup.h"
 #include "time.h"
 #include "coap_server.h"
 #include "coap_client.h"
