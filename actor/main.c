@@ -19,7 +19,7 @@ static char _rcv_stack_buf[THREAD_STACKSIZE_DEFAULT];
 char* rpl_root_addr = "2001:db8::1";
 kernel_pid_t iface_pid = 6;
 
-#define MULTICAST_ADDR "ff02::fc"
+#define MULTICAST_ADDR "ff02::13"
 
 int coap_client(int argc, char** argv);
 int greet(int argc, char** argv);
