@@ -66,13 +66,16 @@ int main(void)
 
 int coap_client(int argc, char** argv)
 {
-    (void)argc;
-    (void)argv;
+
+    if (argc < 2) {
+        printf("Usage: %s <server or multicast address>\n", argv[0]);
+        return 1;
+    }
 
     ipv6_addr_t target;
-    ipv6_addr_from_str(&target, "2001:db8::1");
+    ipv6_addr_from_str(&target, argv[1]);
 
-    coap_client_send(&target, COAP_METHOD_GET, ".well-known/core");
+    coap_client_send(&target, COAP_METHOD_GET, COAP_TYPE_NONCON, ".well-known/core", NULL, 0);
 
     coap_client_receive();
 
@@ -82,15 +85,15 @@ int coap_client(int argc, char** argv)
 int greet(int argc, char** argv)
 {
 
-    if (argc < 2) {
-        printf("Usage: %s <name>\n", argv[0]);
+    if (argc < 3) {
+        printf("Usage: %s <server or multicast address> <name>\n", argv[0]);
         return 1;
     }
 
     ipv6_addr_t target;
-    ipv6_addr_from_str(&target, "2001:db8::1");
+    ipv6_addr_from_str(&target, argv[1]);
 
-    coap_client_send_payload(&target, COAP_METHOD_POST, "greet", argv[1], COAP_CONTENTTYPE_TEXT_PLAIN);
+    coap_client_send(&target, COAP_METHOD_POST, COAP_TYPE_CON, "greet", argv[2], COAP_CONTENTTYPE_TEXT_PLAIN);
 
     coap_client_receive();
 
