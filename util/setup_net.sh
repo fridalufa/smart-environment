@@ -102,6 +102,9 @@ do
         tmux split-window -h -t $(($i-1))
     fi
     tmux send-keys "cd $SMART_ENV_ACTOR_PATH" 'C-m' "make term PORT=tap$i" 'C-m'
+    if [ $i -eq 0 ]; then
+        tmux send-keys 'mkroot' 'C-m'
+    fi
 done
 
 # start sensor sessions
