@@ -19,6 +19,11 @@ int greet(int argc, char** argv);
 int selected_interface(int argc, char** argv);
 int mkroot(int argc, char** argv);
 
+const coap_endpoint_t endpoints[] = {
+    /* marks the end of the endpoints array: */
+    { (coap_method_t)0, NULL, NULL, NULL }
+};
+
 static const shell_command_t shell_commands[] = {
     { "coap", "Send a coap request to the server and display response", coap_client },
     { "greet", "Let the server greet you via a CoAP POST request", greet },

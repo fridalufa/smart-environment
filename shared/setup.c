@@ -77,11 +77,6 @@ bool rpl_init(kernel_pid_t iface_pid)
  */
 bool rpl_root_init(char* link_addr, kernel_pid_t iface_pid)
 {
-    // TODO: this code is in fact duplicated
-    /*if (ipv6_addr_from_str(&addr, link_addr) == NULL) {
-        puts("error: unable to parse IPv6 address.");
-        return false;
-    };*/
 
     ipv6_addr_t* addr = _configure_global_ipv6_address(link_addr, iface_pid);
 
