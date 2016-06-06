@@ -7,13 +7,13 @@
 ####
 
 # Set the name of your application:
-APPLICATION = smart-environment
+APPLICATION = smart-environment-sensor
 
 # If no BOARD is found in the environment, use this default:
 BOARD ?= native
 
 # This has to be the absolute path to the RIOT base directory:
-RIOTBASE ?= $(CURDIR)/../RIOT
+RIOTBASE ?= $(CURDIR)/../../RIOT
 
 BOARD_INSUFFICIENT_MEMORY := airfy-beacon chronos msb-430 msb-430h nrf51dongle \
                           nrf6310 nucleo-f103 nucleo-f334 pca10000 pca10005 spark-core \
@@ -54,5 +54,9 @@ CFLAGS += -DDEVELHELP
 
 # Change this to 0 show compiler invocation lines by default:
 QUIET ?= 1
+
+# Add shared files
+DIRS += ../shared
+USEMODULE += smart-environment-shared
 
 include $(RIOTBASE)/Makefile.include

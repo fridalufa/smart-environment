@@ -15,10 +15,10 @@
 #endif
 #include "debug.h"
 
-void coap_client_send(ipv6_addr_t* target, coap_method_t method, char* endpoint);
+void coap_client_send_simple(ipv6_addr_t* target, coap_method_t method, char* endpoint);
 
-void coap_client_send_payload(ipv6_addr_t* target, coap_method_t method, char* endpoint,
-                              char* payload, coap_content_type_t ct);
+void coap_client_send(ipv6_addr_t* target, coap_method_t method, coap_msgtype_t type,
+                      char* endpoint, char* payload, coap_content_type_t ct);
 
 void coap_client_receive(void);
 

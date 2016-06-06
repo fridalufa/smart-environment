@@ -1,25 +1,40 @@
 #include "setup.h"
 
-ipv6_addr_t addr;
-
 /**
  * Add a global IPv6 address for the root node
  * @param  link_addr The desired IPv6 address
  * @param  iface_pid ID of the interface
  * @return           true on success, false on failure
  */
-bool _configure_global_ipv6_address(char* link_addr, kernel_pid_t iface_pid)
+ipv6_addr_t* _configure_global_ipv6_address(char* link_addr, kernel_pid_t iface_pid)
 {
+    return add_address_to_interface(link_addr, iface_pid, GNRC_IPV6_NETIF_ADDR_FLAGS_UNICAST);
+}
+
+bool add_multicast_address(char* link_addr, kernel_pid_t iface_pid)
+{
+    return (add_address_to_interface(link_addr, iface_pid, GNRC_IPV6_NETIF_ADDR_FLAGS_NON_UNICAST) != NULL);
+}
+
+ipv6_addr_t* add_address_to_interface(char* link_addr, kernel_pid_t iface_pid, uint8_t add_flags)
+{
+
     // add a global IPv6 address for the root node
     uint8_t prefix_len, flags = 0;
     ipv6_addr_t* ifaddr;
+    ipv6_addr_t addr_dec;
+
+    if (ipv6_addr_from_str(&addr_dec, link_addr) == NULL) {
+        puts("error: unable to parse IPv6 address.");
+        return NULL;
+    };
 
     prefix_len = ipv6_addr_split(link_addr, '/', 64);
-    flags = GNRC_IPV6_NETIF_ADDR_FLAGS_NDP_AUTO | GNRC_IPV6_NETIF_ADDR_FLAGS_UNICAST;
+    flags = GNRC_IPV6_NETIF_ADDR_FLAGS_NDP_AUTO | add_flags;
 
-    if ((ifaddr = gnrc_ipv6_netif_add_addr(iface_pid, &addr, prefix_len, flags)) == NULL) {
+    if ((ifaddr = gnrc_ipv6_netif_add_addr(iface_pid, &addr_dec, prefix_len, flags)) == NULL) {
         printf("error: unable to add IPv6 address\n");
-        return false;
+        return NULL;
     }
 
     // Address shall be valid infinitely
@@ -27,7 +42,7 @@ bool _configure_global_ipv6_address(char* link_addr, kernel_pid_t iface_pid)
     // Address shall be preferred infinitely
     gnrc_ipv6_netif_addr_get(ifaddr)->preferred = UINT32_MAX;
 
-    return true;
+    return ifaddr;
 }
 
 /**
@@ -62,19 +77,11 @@ bool rpl_init(kernel_pid_t iface_pid)
  */
 bool rpl_root_init(char* link_addr, kernel_pid_t iface_pid)
 {
-    if (ipv6_addr_from_str(&addr, link_addr) == NULL) {
-        puts("error: unable to parse IPv6 address.");
-        return false;
-    };
 
-    _configure_global_ipv6_address(link_addr, iface_pid);
-
-    if (!rpl_init(iface_pid)) {
-        return false;
-    }
+    ipv6_addr_t* addr = _configure_global_ipv6_address(link_addr, iface_pid);
 
     // Initialize root node
-    if (gnrc_rpl_root_init(0, &addr, true, false) == NULL) {
+    if (gnrc_rpl_root_init(0, addr, true, false) == NULL) {
         puts("failed to initialize node as root node");
         return false;
     }
@@ -85,8 +92,6 @@ bool rpl_root_init(char* link_addr, kernel_pid_t iface_pid)
 kernel_pid_t get_first_interface(void)
 {
     kernel_pid_t ifs[GNRC_NETIF_NUMOF];
-
-    puts("RIOT network stack example application");
 
     size_t numof = gnrc_netif_get(ifs);
 
