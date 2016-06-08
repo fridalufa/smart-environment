@@ -18,6 +18,7 @@ int coap_client(int argc, char** argv);
 int greet(int argc, char** argv);
 int selected_interface(int argc, char** argv);
 int mkroot(int argc, char** argv);
+int send_temperature(int argc, char** argv);
 
 const coap_endpoint_t endpoints[] = {
     /* marks the end of the endpoints array: */
@@ -29,6 +30,7 @@ static const shell_command_t shell_commands[] = {
     { "greet", "Let the server greet you via a CoAP POST request", greet },
     { "iface", "Show the interface used for network communication", selected_interface },
     { "mkroot", "Make this node root of the rpl", mkroot },
+    { "temperature", "Send temperature to server", send_temperature },
     { NULL, NULL, NULL }
 };
 
@@ -121,6 +123,23 @@ int mkroot(int argc, char** argv)
     }
 
     puts("Made this node the rpl root");
+
+    return 0;
+}
+
+
+int send_temperature(int argc, char** argv)
+{
+
+    if (argc < 3) {
+        printf("Usage: %s <server or multicast address> <temperature>\n", argv[0]);
+        return 1;
+    }
+
+    ipv6_addr_t target;
+    ipv6_addr_from_str(&target, argv[1]);
+
+    coap_client_send(&target, COAP_METHOD_POST, COAP_TYPE_NONCON, "temperature", argv[2], COAP_CONTENTTYPE_TEXT_PLAIN);
 
     return 0;
 }

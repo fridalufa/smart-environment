@@ -43,24 +43,6 @@ void coap_server_loop(void)
 
             /* handle CoAP request */
             coap_handle_req(&scratch_buf, &pkt, &rsppkt);
-
-            /* build reply */
-            size_t rsplen = sizeof(_udp_buf);
-            if ((rc = coap_build(_udp_buf, &rsplen, &rsppkt)) != 0) {
-                DEBUG("coap_build failed rc=%d\n", rc);
-            } else {
-                DEBUG("Sending packet: ");
-                coap_dump(_udp_buf, rsplen, true);
-                DEBUG("\n");
-                DEBUG("content:\n");
-                coap_dumpPacket(&rsppkt);
-
-                /* send reply via UDP */
-                rc = conn_udp_sendto(_udp_buf, rsplen, NULL, 0, raddr, raddr_len, AF_INET6, COAP_SERVER_PORT, rport);
-                if (rc < 0) {
-                    DEBUG("Error sending CoAP reply via udp; %u\n", rc);
-                }
-            }
         }
     }
 }
