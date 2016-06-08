@@ -5,24 +5,57 @@ ACTORS=2
 # number of sensors
 SENSORS=2
 
+usage() {
+    PROGRAM=$(basename $0)
+    echo "Creates a net of sensors and actors running on RIOT native nodes." >&2
+    echo "" >&2
+    echo "Usage: $PROGRAM [options]" >&2
+    echo "" >&2
+    echo "Default behaviour:"
+    echo "    If no options are given, $ACTORS actors and $SENSORS sensors will be created." >&2
+    echo "" >&2
+    echo "Options" >&2
+    echo "    -a <num>, --actors <num>:   Create <num> actors" >&2
+    echo "    -s <num, --sensors <num>:   Create <num> sensors" >&2
+    echo "    -h, --help:                 Print this text" >&2
+}
+
+
 # parse arguments
-while [[ $# > 1 ]]
+while [[ $# > 0 ]]
 do
+
 opt="$1"
 
 case $opt in
+
     -a|--actors)
-    ACTORS="$2"
-    shift
-    ;;
+    case "$2" in
+        ""|*[!0-9]*)
+            usage
+            exit 1 ;;
+        *)
+            ACTORS="$2"
+            shift ;;
+    esac ;;
+
     -s|--sensors)
-    SENSORS="$2"
-    shift
-    ;;
+        case "$2" in
+        ""|*[!0-9]*)
+            usage
+            exit 1 ;;
+        *)
+            SENSORS="$2"
+            shift ;;
+    esac ;;
+
+    -h|--help)
+    usage
+    exit ;;
+
     *)
-    echo "Unknown option: $1"
-    exit 1
-    ;;
+    usage
+    exit 1 ;;
 esac
 shift
 done
@@ -61,22 +94,25 @@ make all
 
 tmux new-session -d -s smartenv
 tmux rename-window 'Smart Environment'
+
 # start actor sessions
 for i in $(seq 0 $(($ACTORS-1)))
 do
     if [ $i -gt 0 ]; then
         tmux split-window -h -t $(($i-1))
     fi
-    tmux select-window -t smartenv:$i
     tmux send-keys "cd $SMART_ENV_ACTOR_PATH" 'C-m' "make term PORT=tap$i" 'C-m'
+    if [ $i -eq 0 ]; then
+        tmux send-keys 'mkroot' 'C-m'
+    fi
 done
+
 # start sensor sessions
 for j in $(seq $ACTORS $(($TOTAL_NODES-1)))
 do
     if [ $j -gt 0 ]; then
         tmux split-window -h -t $(($j-1))
     fi
-    tmux select-window -t smartenv:$j
     tmux send-keys "cd $SMART_ENV_SENSOR_PATH" 'C-m' "make term PORT=tap$j" 'C-m'
 done
 

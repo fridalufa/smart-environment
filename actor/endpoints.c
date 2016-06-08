@@ -1,6 +1,8 @@
 #include <coap.h>
 #include <string.h>
+#include <stdlib.h>
 #include <stdio.h>
+#include "temperature_manager.h"
 
 #define MAX_RESPONSE_LEN 500
 static uint8_t response[MAX_RESPONSE_LEN] = { 0 };
@@ -20,11 +22,18 @@ static int handle_greet(coap_rw_buffer_t* scratch,
                         coap_packet_t* outpkt,
                         uint8_t id_hi, uint8_t id_lo);
 
+static int handle_temperature(coap_rw_buffer_t* scratch,
+                              const coap_packet_t* inpkt,
+                              coap_packet_t* outpkt,
+                              uint8_t id_hi, uint8_t id_lo);
+
 static const coap_endpoint_path_t path_well_known_core = { 2, { ".well-known", "core" } };
 
 static const coap_endpoint_path_t path_riot_board = { 2, { "riot", "board" } };
 
 static const coap_endpoint_path_t path_greet = { 1, { "greet"} };
+
+static const coap_endpoint_path_t path_temperature = { 1, { "temperature"} };
 
 const coap_endpoint_t endpoints[] = {
     {
@@ -38,6 +47,10 @@ const coap_endpoint_t endpoints[] = {
     {
         COAP_METHOD_POST,  handle_greet,
         &path_greet,      "ct=0"
+    },
+    {
+        COAP_METHOD_POST,  handle_temperature,
+        &path_temperature,      "ct=0" // JSON: "ct=50" ?
     },
     /* marks the end of the endpoints array: */
     { (coap_method_t)0, NULL, NULL, NULL }
@@ -132,4 +145,28 @@ static int handle_greet(coap_rw_buffer_t* scratch,
     return coap_make_response(scratch, outpkt, (const uint8_t*)response, len,
                               id_hi, id_lo, &inpkt->tok, COAP_RSPCODE_CONTENT,
                               COAP_CONTENTTYPE_TEXT_PLAIN);
+}
+
+static int handle_temperature(coap_rw_buffer_t* scratch,
+                              const coap_packet_t* inpkt, coap_packet_t* outpkt,
+                              uint8_t id_hi, uint8_t id_lo)
+{
+    (void)scratch;
+    (void)outpkt;
+    (void)id_hi;
+    (void)id_lo;
+
+    coap_buffer_t payload = inpkt->payload;
+
+    const char* plaintext = (char*) payload.p;
+
+    // It is important, to take the length information of the payload buffer into account.
+    // Otherwise there may be more characters before there is a null termination.
+    char payloadString[payload.len + 1];
+    strncpy(payloadString, plaintext, payload.len);
+    payloadString[payload.len] = '\0';
+
+    manage_temperature(atof(payloadString));
+
+    return 0;
 }

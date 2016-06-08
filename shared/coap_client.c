@@ -3,24 +3,22 @@
 #define CLIENT_PORT 9293
 #define COAP_SERVER_PORT 5683
 
-// TODO: refactor the header files, maybe create a single coap.h instead of a separate
-// header for both client and server
-
 /**
- * @brief constructs a CoAP packet with a payload and sends it to the targets endpoint
+ * @brief      constructs a CoAP packet with a payload and sends it to the targets endpoint
  *
- * @param      target    The targets adress
- * @param[in]  method    The request method
- * @param      endpoint  The endpoint URI
- * @param      payload   Payload
- * @param      ct        Content type of the payload
+ * @param      target   The target adress
+ * @param[in]  method   The request method
+ * @param[in]  type     The message type
+ * @param      payload  Payload
+ * @param[in]  ct       Content type of the payload
  */
-void coap_client_send_payload(ipv6_addr_t* target, coap_method_t method,
-                              char* endpoint, char* payload, coap_content_type_t ct)
+void coap_client_send(ipv6_addr_t* target, coap_method_t method, coap_msgtype_t type,
+                      char* endpoint, char* payload, coap_content_type_t ct)
 {
-
-    char uri[strlen(endpoint)];
-    strcpy(uri, endpoint);
+    int endpointLen = strlen(endpoint);
+    char uri[endpointLen + 1];
+    strncpy(uri, endpoint, endpointLen);
+    uri[endpointLen] = '\0';
 
     // count the amount of parts of the endpoint URI
     int parts = 1;
@@ -37,8 +35,6 @@ void coap_client_send_payload(ipv6_addr_t* target, coap_method_t method,
     }
 
     coap_option_t opts[numOptions];
-
-    coap_packet_t pkt;
 
     // construct option array containg the parts of the endpoint URI
 
@@ -74,10 +70,21 @@ void coap_client_send_payload(ipv6_addr_t* target, coap_method_t method,
         opts[i] = opt;
     }
 
+    // check if message type is allowed (either confirmable or non-confirmable)
+    if (type < 0 || type > 3) {
+        type = COAP_TYPE_CON;
+    } else if (type != COAP_TYPE_CON && type != COAP_TYPE_NONCON) {
+        DEBUG("Invalid message type. Valid types for requests are confirmable and non-confirmable.");
+    }
+
+
+    // construct the packet
+    coap_packet_t pkt;
+
     // begin with constructing the header
     pkt.hdr = (coap_header_t) {
         1,             // CoAP protocol version
-        COAP_TYPE_CON, // this should be a confirmable message
+        type,          // message type (either confirmable or non-confirmable)
         0,             // token length (currently zero since we do not support tokens at the moment)
         method,        // method to use
         {0, 0}         // id placeholder, actual id gets generated below
@@ -124,9 +131,9 @@ void coap_client_send_payload(ipv6_addr_t* target, coap_method_t method,
  * @param[in]  method    The method
  * @param      endpoint  The endpoint
  */
-void coap_client_send(ipv6_addr_t* target, coap_method_t method, char* endpoint)
+void coap_client_send_simple(ipv6_addr_t* target, coap_method_t method, char* endpoint)
 {
-    coap_client_send_payload(target, method, endpoint, NULL, COAP_CONTENTTYPE_TEXT_PLAIN);
+    coap_client_send(target, method, COAP_TYPE_CON, endpoint, NULL, COAP_CONTENTTYPE_TEXT_PLAIN);
 }
 
 /**

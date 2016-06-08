@@ -26,6 +26,7 @@ int selected_interface(int argc, char** argv);
 int mkroot(int argc, char** argv);
 int cbor_test(int argc, char** argv);
 int temp(int argc, char** argv);
+int send_temperature(int argc, char** argv);
 
 const coap_endpoint_t endpoints[] = {
     /* marks the end of the endpoints array: */
@@ -39,6 +40,7 @@ static const shell_command_t shell_commands[] = {
     { "mkroot", "Make this node root of the rpl", mkroot },
     { "cbor", "Create a test cbor payload", cbor_test},
     { "temp", "Sense temperature", temp},
+    { "temperature", "Send temperature to server", send_temperature },
     { NULL, NULL, NULL }
 };
 
@@ -76,13 +78,16 @@ int main(void)
 
 int coap_client(int argc, char** argv)
 {
-    (void)argc;
-    (void)argv;
+
+    if (argc < 2) {
+        printf("Usage: %s <server or multicast address>\n", argv[0]);
+        return 1;
+    }
 
     ipv6_addr_t target;
-    ipv6_addr_from_str(&target, "2001:db8::1");
+    ipv6_addr_from_str(&target, argv[1]);
 
-    coap_client_send(&target, COAP_METHOD_GET, ".well-known/core");
+    coap_client_send(&target, COAP_METHOD_GET, COAP_TYPE_NONCON, ".well-known/core", NULL, 0);
 
     coap_client_receive();
 
@@ -92,15 +97,15 @@ int coap_client(int argc, char** argv)
 int greet(int argc, char** argv)
 {
 
-    if (argc < 2) {
-        printf("Usage: %s <name>\n", argv[0]);
+    if (argc < 3) {
+        printf("Usage: %s <server or multicast address> <name>\n", argv[0]);
         return 1;
     }
 
     ipv6_addr_t target;
-    ipv6_addr_from_str(&target, "2001:db8::1");
+    ipv6_addr_from_str(&target, argv[1]);
 
-    coap_client_send_payload(&target, COAP_METHOD_POST, "greet", argv[1], COAP_CONTENTTYPE_TEXT_PLAIN);
+    coap_client_send(&target, COAP_METHOD_POST, COAP_TYPE_CON, "greet", argv[2], COAP_CONTENTTYPE_TEXT_PLAIN);
 
     coap_client_receive();
 
@@ -191,6 +196,21 @@ int temp(int argc, char** argv)
 
         xtimer_usleep(TMP006_CONVERSION_TIME);
     }
+    return 0;
+}
+
+int send_temperature(int argc, char** argv)
+{
+
+    if (argc < 3) {
+        printf("Usage: %s <server or multicast address> <temperature>\n", argv[0]);
+        return 1;
+    }
+
+    ipv6_addr_t target;
+    ipv6_addr_from_str(&target, argv[1]);
+
+    coap_client_send(&target, COAP_METHOD_POST, COAP_TYPE_NONCON, "temperature", argv[2], COAP_CONTENTTYPE_TEXT_PLAIN);
 
     return 0;
 }
