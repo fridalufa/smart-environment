@@ -8,16 +8,24 @@
 #include "../shared/setup.h"
 #include "../shared/coap_client.h"
 
+#include "cbor.h"
+#include "tmp006.h"
+
 #define MAIN_QUEUE_SIZE     (8)
 static msg_t _main_msg_queue[MAIN_QUEUE_SIZE];
 
 char* link_addr = "2001:db8::1";
 kernel_pid_t iface_pid = 6;
 
+static unsigned char stream_data[100];
+static cbor_stream_t stream = {stream_data, sizeof(stream_data), 0};
+
 int coap_client(int argc, char** argv);
 int greet(int argc, char** argv);
 int selected_interface(int argc, char** argv);
 int mkroot(int argc, char** argv);
+int cbor_test(int argc, char** argv);
+int temp(int argc, char** argv);
 
 const coap_endpoint_t endpoints[] = {
     /* marks the end of the endpoints array: */
@@ -29,6 +37,8 @@ static const shell_command_t shell_commands[] = {
     { "greet", "Let the server greet you via a CoAP POST request", greet },
     { "iface", "Show the interface used for network communication", selected_interface },
     { "mkroot", "Make this node root of the rpl", mkroot },
+    { "cbor", "Create a test cbor payload", cbor_test},
+    { "temp", "Sense temperature", temp},
     { NULL, NULL, NULL }
 };
 
@@ -118,6 +128,69 @@ int mkroot(int argc, char** argv)
     }
 
     puts("Made this node the rpl root");
+
+    return 0;
+}
+
+int cbor_test(int argc, char** argv)
+{
+    (void)argc;
+    (void)argv;
+
+    int result = 0;
+
+    cbor_clear(&stream);
+    cbor_init(&stream, stream_data, sizeof(stream_data));
+
+    cbor_serialize_int(&stream, 10);
+    cbor_deserialize_int(&stream, 0, &result);
+
+    printf("Fetched number: %d\n", result);
+
+    return 0;
+}
+
+int temp(int argc, char** argv)
+{
+    (void)argc;
+    (void)argv;
+
+    tmp006_t sensor;
+    int16_t rawtemp = 0, rawvolt = 0;
+    float tamb = 0.0, tobj = 0.0;
+    uint8_t drdy;
+    int result = tmp006_init(&sensor, I2C_0, 0x40, TMP006_CONFIG_CR_AS2);
+
+    printf("Init result: %d\n", result);
+
+    /*if (tmp006_test(&sensor) == 0) {
+        puts("YEAH");
+    } else {
+        puts("NOPE");
+        return 1;
+    }*/
+
+    if (tmp006_set_active(&sensor)) {
+        puts("Measurement start failed.");
+        return 1;
+    }
+
+    while (1) {
+        if (tmp006_read(&sensor, &rawvolt, &rawtemp, &drdy) == -1) {
+            puts("Failed to read temperature");
+            //return 1;
+        }
+
+        if (drdy) {
+            printf("Raw data T: %5d   V: %5d\n", rawtemp, rawvolt);
+            tmp006_convert(rawvolt, rawtemp,  &tamb, &tobj);
+            printf("Data Tabm: %d   Tobj: %d\n", (int)(tamb * 100), (int)(tobj * 100));
+        } else {
+            printf("conversion in progress\n");
+        }
+
+        xtimer_usleep(TMP006_CONVERSION_TIME);
+    }
 
     return 0;
 }

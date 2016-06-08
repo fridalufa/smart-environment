@@ -38,6 +38,8 @@ void coap_client_send_payload(ipv6_addr_t* target, coap_method_t method,
 
     coap_option_t opts[numOptions];
 
+    coap_packet_t pkt;
+
     // construct option array containg the parts of the endpoint URI
 
     char* token = strtok(uri, "/");
@@ -71,10 +73,6 @@ void coap_client_send_payload(ipv6_addr_t* target, coap_method_t method,
 
         opts[i] = opt;
     }
-
-
-    // construct the packet
-    coap_packet_t pkt = {0};
 
     // begin with constructing the header
     pkt.hdr = (coap_header_t) {
