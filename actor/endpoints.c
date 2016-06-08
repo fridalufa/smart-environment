@@ -2,12 +2,10 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include "temperature_manager.h"
 
 #define MAX_RESPONSE_LEN 500
 static uint8_t response[MAX_RESPONSE_LEN] = { 0 };
-
-static int temperature;
-static uint8_t record_count;
 
 static int handle_get_well_known_core(coap_rw_buffer_t* scratch,
                                       const coap_packet_t* inpkt,
@@ -168,10 +166,7 @@ static int handle_temperature(coap_rw_buffer_t* scratch,
     strncpy(payloadString, plaintext, payload.len);
     payloadString[payload.len] = '\0';
 
-    temperature += atoi(payloadString);
-    record_count++;
-
-    printf("Current average temperature: %d\n", temperature / record_count);
+    manage_temperature(atof(payloadString));
 
     return 0;
 }
