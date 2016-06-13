@@ -48,7 +48,7 @@ USEMODULE += cbor
 CFLAGS += -DCBOR_NO_PRINT
 
 USEMODULE += tmp006
-FEATURES_REQUIRED = periph_i2c
+FEATURES_OPTIONAL += periph_i2c
 
 # Comment this out to disable code in RIOT that does safety checking
 # which is not needed in a production environment but helps in the

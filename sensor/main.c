@@ -7,9 +7,9 @@
 
 #include "../shared/setup.h"
 #include "../shared/coap_client.h"
+#include "hardware.h"
 
 #include "cbor.h"
-#include "tmp006.h"
 
 #define MAIN_QUEUE_SIZE     (8)
 static msg_t _main_msg_queue[MAIN_QUEUE_SIZE];
@@ -64,6 +64,10 @@ int main(void)
     if (!rpl_init(iface_pid)) {
         puts("error: Unable to initialize RPL");
         return 1;
+    }
+
+    if (temp_sensor_init() == 0) {
+        puts("Temperature sensor initialized");
     }
 
     // Taken from the hello world example!
@@ -160,42 +164,9 @@ int temp(int argc, char** argv)
     (void)argc;
     (void)argv;
 
-    tmp006_t sensor;
-    int16_t rawtemp = 0, rawvolt = 0;
-    float tamb = 0.0, tobj = 0.0;
-    uint8_t drdy;
-    int result = tmp006_init(&sensor, I2C_0, 0x40, TMP006_CONFIG_CR_AS2);
+    int temperature = temp_sensor_read();
 
-    printf("Init result: %d\n", result);
-
-    /*if (tmp006_test(&sensor) == 0) {
-        puts("YEAH");
-    } else {
-        puts("NOPE");
-        return 1;
-    }*/
-
-    if (tmp006_set_active(&sensor)) {
-        puts("Measurement start failed.");
-        return 1;
-    }
-
-    while (1) {
-        if (tmp006_read(&sensor, &rawvolt, &rawtemp, &drdy) == -1) {
-            puts("Failed to read temperature");
-            //return 1;
-        }
-
-        if (drdy) {
-            printf("Raw data T: %5d   V: %5d\n", rawtemp, rawvolt);
-            tmp006_convert(rawvolt, rawtemp,  &tamb, &tobj);
-            printf("Data Tabm: %d   Tobj: %d\n", (int)(tamb * 100), (int)(tobj * 100));
-        } else {
-            printf("conversion in progress\n");
-        }
-
-        xtimer_usleep(TMP006_CONVERSION_TIME);
-    }
+    printf("Temperature: %d/100 *C\n", temperature);
     return 0;
 }
 
