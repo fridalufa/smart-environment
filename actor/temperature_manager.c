@@ -1,5 +1,6 @@
 #include "temperature_manager.h"
 #include <stdio.h>
+#include <board.h>
 
 static float temperatureWindow[WINDOW_SIZE];
 static int record_count = 0;
@@ -23,7 +24,14 @@ int manage_temperature(float temperature)
         temperature_sum += temperatureWindow[i];
     }
 
-    printf("Average temperature: %f\n", temperature_sum / (float)record_count);
+    double average_temp = temperature_sum / (float)record_count;
+    printf("Average temperature: %f\n", average_temp);
+
+    if (average_temp < MAX_TEMP) {
+        _native_LED_GREEN_ON();
+    } else {
+        _native_LED_GREEN_OFF();
+    }
 
     return 0;
 }
