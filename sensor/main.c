@@ -14,6 +14,10 @@
 #define MAIN_QUEUE_SIZE     (8)
 static msg_t _main_msg_queue[MAIN_QUEUE_SIZE];
 
+#define MULTICAST_ADDR "ff02::13"
+
+static char thread_stack[THREAD_STACKSIZE_DEFAULT];
+
 char* link_addr = "2001:db8::1";
 kernel_pid_t iface_pid = 6;
 
@@ -22,11 +26,11 @@ static cbor_stream_t stream = {stream_data, sizeof(stream_data), 0};
 
 int coap_client(int argc, char** argv);
 int greet(int argc, char** argv);
-int selected_interface(int argc, char** argv);
 int mkroot(int argc, char** argv);
 int cbor_test(int argc, char** argv);
 int temp(int argc, char** argv);
 int send_temperature(int argc, char** argv);
+void* temp_thread(void* arg);
 
 const coap_endpoint_t endpoints[] = {
     /* marks the end of the endpoints array: */
@@ -36,7 +40,6 @@ const coap_endpoint_t endpoints[] = {
 static const shell_command_t shell_commands[] = {
     { "coap", "Send a coap request to the server and display response", coap_client },
     { "greet", "Let the server greet you via a CoAP POST request", greet },
-    { "iface", "Show the interface used for network communication", selected_interface },
     { "mkroot", "Make this node root of the rpl", mkroot },
     { "cbor", "Create a test cbor payload", cbor_test},
     { "temp", "Sense temperature", temp},
@@ -68,6 +71,8 @@ int main(void)
 
     if (temp_sensor_init() == 0) {
         puts("Temperature sensor initialized");
+
+        thread_create(thread_stack, THREAD_STACKSIZE_DEFAULT, THREAD_PRIORITY_MAIN - 1, 0, temp_thread, NULL, "Sensor Thread");
     }
 
     // Taken from the hello world example!
@@ -112,17 +117,6 @@ int greet(int argc, char** argv)
     coap_client_send(&target, COAP_METHOD_POST, COAP_TYPE_CON, "greet", argv[2], COAP_CONTENTTYPE_TEXT_PLAIN);
 
     coap_client_receive();
-
-    return 0;
-}
-
-int selected_interface(int argc, char** argv)
-{
-    (void)argc;
-    (void)argv;
-    kernel_pid_t ifs = get_first_interface();
-
-    printf("Using interface: %d\n", ifs);
 
     return 0;
 }
@@ -172,16 +166,36 @@ int temp(int argc, char** argv)
 
 int send_temperature(int argc, char** argv)
 {
+    char temp_buffer[10];
+
+    if (argc < 2) {
+        printf("Usage: %s <server or multicast address> (<temperature>)\n", argv[0]);
+        return 1;
+    }
 
     if (argc < 3) {
-        printf("Usage: %s <server or multicast address> <temperature>\n", argv[0]);
-        return 1;
+        int temperature = temp_sensor_read();
+        sprintf(temp_buffer, "%d", temperature);
+    } else {
+        sprintf(temp_buffer, "%s", argv[2]);
     }
 
     ipv6_addr_t target;
     ipv6_addr_from_str(&target, argv[1]);
 
-    coap_client_send(&target, COAP_METHOD_POST, COAP_TYPE_NONCON, "temperature", argv[2], COAP_CONTENTTYPE_TEXT_PLAIN);
+    coap_client_send(&target, COAP_METHOD_POST, COAP_TYPE_NONCON, "temperature", temp_buffer, COAP_CONTENTTYPE_TEXT_PLAIN);
 
     return 0;
+}
+
+void* temp_thread(void* arg)
+{
+    (void)arg;
+    while (1) {
+        char* args[] = {"temperature", MULTICAST_ADDR};
+        send_temperature(2, args);
+        xtimer_sleep(5);
+    }
+
+    return NULL;
 }
