@@ -7,7 +7,7 @@
 ####
 
 # Set the name of your application:
-APPLICATION = smart-environment-actor
+APPLICATION = smart-environment-actor-fan
 
 # If no BOARD is found in the environment, use this default:
 BOARD ?= native

@@ -67,6 +67,14 @@ int main(void)
 
     add_multicast_address(MULTICAST_ADDR, iface_pid);
 
+    uint32_t real_frequency = init_fan();
+
+    if (real_frequency == 0) {
+        puts("Failed to initialize PWM for fan.");
+    } else {
+        printf("Initialized fan with %" PRIu32 " Hz.\n", real_frequency);
+    }
+
     puts("Launching coap server");
     thread_create(_rcv_stack_buf, THREAD_STACKSIZE_DEFAULT, THREAD_PRIORITY_MAIN - 1, 0, _coap_server_thread, NULL , "_coap_server_thread");
 
