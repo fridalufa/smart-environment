@@ -12,7 +12,7 @@
 #define LEDYELLOW_PIN         GPIO_PIN(PA, 15)
 #define LEDGREEN_PIN          GPIO_PIN(PB, 22)
 
-int manage_temperature(float temperature);
+int manage_temperature(int temperature);
 int setLed(gpio_t led);
 
 #endif

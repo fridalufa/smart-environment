@@ -166,7 +166,7 @@ static int handle_temperature(coap_rw_buffer_t* scratch,
   strncpy(payloadString, plaintext, payload.len);
   payloadString[payload.len] = '\0';
 
-  manage_temperature(atof(payloadString));
+  manage_temperature(atoi(payloadString));
 
   return 0;
 }

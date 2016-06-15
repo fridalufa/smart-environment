@@ -6,7 +6,7 @@ static float temperatureWindow[WINDOW_SIZE];
 static int record_count = 0;
 static int current_index = 0;
 
-int manage_temperature(float temperature)
+int manage_temperature(int temperature)
 {
     if (record_count < WINDOW_SIZE) {
         record_count++;
@@ -24,13 +24,12 @@ int manage_temperature(float temperature)
         temperature_sum += temperatureWindow[i];
     }
 
-    double average_temp = temperature_sum / (float)record_count;
-    printf("Average temperature: %f\n", average_temp);
+    int average_temp = temperature_sum / record_count;
 
-    if (average_temp < YELLOW_TEMP) {
+    if (average_temp < YELLOW_TEMP * 100) {
         setLed(LEDGREEN_PIN);
     } else {
-        if (average_temp < RED_TEMP) {
+        if (average_temp < RED_TEMP * 100) {
             setLed(LEDYELLOW_PIN);
         } else {
             setLed(LEDRED_PIN);
