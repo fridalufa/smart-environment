@@ -1,6 +1,6 @@
 #include "temperature_manager.h"
+#include "periph/gpio.h"
 #include <stdio.h>
-#include <board.h>
 
 static float temperatureWindow[WINDOW_SIZE];
 static int record_count = 0;
@@ -27,11 +27,26 @@ int manage_temperature(float temperature)
     double average_temp = temperature_sum / (float)record_count;
     printf("Average temperature: %f\n", average_temp);
 
-    if (average_temp < MAX_TEMP) {
-        _native_LED_GREEN_ON();
+    if (average_temp < YELLOW_TEMP) {
+        setLed(LEDGREEN_PIN);
     } else {
-        _native_LED_GREEN_OFF();
+        if (average_temp < RED_TEMP) {
+            setLed(LEDYELLOW_PIN);
+        } else {
+            setLed(LEDRED_PIN);
+        }
     }
+
+    return 0;
+}
+
+int setLed(gpio_t led)
+{
+    gpio_clear(LEDRED_PIN);
+    gpio_clear(LEDYELLOW_PIN);
+    gpio_clear(LEDGREEN_PIN);
+
+    gpio_set(led);
 
     return 0;
 }

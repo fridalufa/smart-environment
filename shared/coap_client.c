@@ -79,7 +79,7 @@ void coap_client_send(ipv6_addr_t* target, coap_method_t method, coap_msgtype_t 
 
 
     // construct the packet
-    coap_packet_t pkt = {0};
+    coap_packet_t pkt;
 
     // begin with constructing the header
     pkt.hdr = (coap_header_t) {

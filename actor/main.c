@@ -7,6 +7,7 @@
 #include "time.h"
 #include "coap_server.h"
 #include "../shared/coap_client.h"
+#include "temperature_manager.h"
 
 #define MAIN_QUEUE_SIZE     (8)
 static msg_t _main_msg_queue[MAIN_QUEUE_SIZE];
@@ -46,6 +47,11 @@ int main(void)
 
     // Message Queue for receiving potentially fast incoming networking packets
     msg_init_queue(_main_msg_queue, MAIN_QUEUE_SIZE);
+
+    // Initialize GPIO
+    gpio_init(LEDRED_PIN, GPIO_OUT);
+    gpio_init(LEDYELLOW_PIN, GPIO_OUT);
+    gpio_init(LEDGREEN_PIN, GPIO_OUT);
 
     iface_pid = get_first_interface();
 
