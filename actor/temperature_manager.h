@@ -5,8 +5,8 @@
 
 #define WINDOW_SIZE (1)
 
-#define YELLOW_TEMP (22)
-#define RED_TEMP (25)
+#define YELLOW_TEMP (30)
+#define RED_TEMP (33)
 
 #define LEDRED_PIN            GPIO_PIN(PB, 23)
 #define LEDYELLOW_PIN         GPIO_PIN(PA, 15)
