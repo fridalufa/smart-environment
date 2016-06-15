@@ -43,10 +43,19 @@ USEMODULE += gnrc_conn_udp
 USEPKG += microcoap
 CFLAGS += -DMICROCOAP_DEBUG
 
+# CBOR
+USEMODULE += cbor
+CFLAGS += -DCBOR_NO_PRINT
+
+USEMODULE += tmp006
+FEATURES_OPTIONAL += periph_i2c
+
 # Comment this out to disable code in RIOT that does safety checking
 # which is not needed in a production environment but helps in the
 # development process:
 CFLAGS += -DDEVELHELP
+
+CFLAGS_OPT = -O0
 
 # Comment this out to join RPL DODAGs even if DIOs do not contain
 # DODAG Configuration Options (see the doc for more info)
