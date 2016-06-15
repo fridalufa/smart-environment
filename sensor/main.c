@@ -16,7 +16,7 @@ static msg_t _main_msg_queue[MAIN_QUEUE_SIZE];
 
 #define MULTICAST_ADDR "ff02::13"
 
-static char thread_stack[THREAD_STACKSIZE_DEFAULT];
+static char thread_stack[2 * THREAD_STACKSIZE_DEFAULT];
 
 char* link_addr = "2001:db8::1";
 kernel_pid_t iface_pid = 6;
@@ -72,7 +72,7 @@ int main(void)
     if (temp_sensor_init() == 0) {
         puts("Temperature sensor initialized");
 
-        thread_create(thread_stack, THREAD_STACKSIZE_DEFAULT, THREAD_PRIORITY_MAIN - 1, 0, temp_thread, NULL, "Sensor Thread");
+        thread_create(thread_stack, 2 * THREAD_STACKSIZE_DEFAULT, THREAD_PRIORITY_MAIN - 1, 0, temp_thread, NULL, "Sensor Thread");
     }
 
     // Taken from the hello world example!
