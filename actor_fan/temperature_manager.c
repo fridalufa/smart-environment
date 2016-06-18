@@ -44,7 +44,7 @@ int manage_temperature(int temperature)
         if (average_temp < FAN_TEMP * 100) {
             pwm_set(FAN_DEVICE, FAN_CHAN, 2 * STEPS / 3);
         } else {
-            pwm_set(FAN_DEVICE, FAN_CHAN, STEPS - 100);
+            pwm_set(FAN_DEVICE, FAN_CHAN, STEPS - (STEPS / 10));
         }
     }
 
