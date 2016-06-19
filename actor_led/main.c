@@ -3,10 +3,13 @@
 #include "shell.h"
 #include "msg.h"
 #include "thread.h"
-#include "../shared/setup.h"
+
 #include "time.h"
 #include "coap_server.h"
-#include "../shared/coap_client.h"
+
+#include "setup.h"
+#include "coap_client.h"
+
 #include "temperature_manager.h"
 
 #define MAIN_QUEUE_SIZE     (8)

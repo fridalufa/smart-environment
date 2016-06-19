@@ -56,7 +56,8 @@ CFLAGS += -DDEVELHELP
 QUIET ?= 1
 
 # Add shared files
-DIRS += ../shared
+EXTERNAL_MODULE_DIRS += $(CURDIR)/../shared
 USEMODULE += smart-environment-shared
+INCLUDES += -I$(CURDIR)/../shared/include
 
 include $(RIOTBASE)/Makefile.include
