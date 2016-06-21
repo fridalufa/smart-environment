@@ -5,8 +5,8 @@
 #include "thread.h"
 #include "time.h"
 
-#include "../shared/setup.h"
-#include "../shared/coap_client.h"
+#include "setup.h"
+#include "coap_client.h"
 #include "hardware.h"
 
 #include "cbor.h"
