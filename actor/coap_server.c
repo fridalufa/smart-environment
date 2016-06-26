@@ -1,4 +1,5 @@
 #include "coap_server.h"
+#include "endpoints.h"
 
 static uint8_t _udp_buf[512];   /* udp read buffer (max udp payload size) */
 uint8_t scratch_raw[1024];      /* microcoap scratch buffer */
@@ -7,12 +8,26 @@ coap_rw_buffer_t scratch_buf = { scratch_raw, sizeof(scratch_raw) };
 
 #define COAP_SERVER_PORT    (5683)
 
-void coap_server_loop(void)
+void coap_server_loop(int (*handle)(coap_rw_buffer_t*,
+                                    const coap_packet_t*,
+                                    coap_packet_t*,
+                                    uint8_t, uint8_t))
 {
     uint8_t laddr[16] = { 0 };
     uint8_t raddr[16] = { 0 };
     size_t raddr_len;
     uint16_t rport;
+
+    (void) handle;
+
+    /*
+    uint8_t id_lo = 2;
+
+    THIS RESULTS IN SEG-FAULT:
+    handle(NULL, NULL, NULL, id_lo, id_lo);
+
+    set_data_handler(handleFunction);
+    */
 
     conn_udp_t conn;
 

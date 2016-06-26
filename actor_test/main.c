@@ -3,13 +3,14 @@
 #include "shell.h"
 #include "msg.h"
 #include "thread.h"
+
 #include "time.h"
-#include "../actor/coap_server.h"
+#include "coap_server.h"
 
 #include "setup.h"
 #include "coap_client.h"
 
-#include "temperature_manager.h"
+#include "test_handler.h"
 
 #define MAIN_QUEUE_SIZE     (8)
 static msg_t _main_msg_queue[MAIN_QUEUE_SIZE];
@@ -50,9 +51,6 @@ int main(void)
     // Message Queue for receiving potentially fast incoming networking packets
     msg_init_queue(_main_msg_queue, MAIN_QUEUE_SIZE);
 
-    // Initialize GPIO
-    gpio_init(FAN_PIN, GPIO_OUT);
-
     iface_pid = get_first_interface();
 
     if (iface_pid < 0) {
@@ -69,16 +67,8 @@ int main(void)
 
     add_multicast_address(MULTICAST_ADDR, iface_pid);
 
-    uint32_t real_frequency = init_fan();
-
-    if (real_frequency == 0) {
-        puts("Failed to initialize PWM for fan.");
-    } else {
-        printf("Initialized fan with %" PRIu32 " Hz.\n", real_frequency);
-    }
-
     puts("Launching coap server");
-    thread_create(_rcv_stack_buf, THREAD_STACKSIZE_DEFAULT, THREAD_PRIORITY_MAIN - 1, 0, _coap_server_thread, NULL , "_coap_server_thread");
+    thread_create(_rcv_stack_buf, THREAD_STACKSIZE_DEFAULT, THREAD_PRIORITY_MAIN - 1, 0, _coap_server_thread, NULL, "_coap_server_thread");
 
     // Taken from the hello world example!
     printf("You are running RIOT on a(n) %s board.\n", RIOT_BOARD);
@@ -96,7 +86,7 @@ static void* _coap_server_thread(void* arg)
     msg_init_queue(_server_msg_queue, SERVER_QUEUE_SIZE);
     puts("Launching server loop");
 
-    coap_server_loop();
+    coap_server_loop(handle);
 
     return NULL;
 }

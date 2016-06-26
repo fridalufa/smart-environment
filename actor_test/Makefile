@@ -7,7 +7,7 @@
 ####
 
 # Set the name of your application:
-APPLICATION = smart-environment-actor-led
+APPLICATION = smart-environment-actor-test
 
 # If no BOARD is found in the environment, use this default:
 BOARD ?= native

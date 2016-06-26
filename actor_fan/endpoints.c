@@ -1,31 +1,6 @@
-#include <coap.h>
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include "temperature_manager.h"
+#include "endpoints.h"
 
-#define MAX_RESPONSE_LEN 500
 static uint8_t response[MAX_RESPONSE_LEN] = { 0 };
-
-static int handle_get_well_known_core(coap_rw_buffer_t* scratch,
-                                      const coap_packet_t* inpkt,
-                                      coap_packet_t* outpkt,
-                                      uint8_t id_hi, uint8_t id_lo);
-
-static int handle_get_riot_board(coap_rw_buffer_t* scratch,
-                                 const coap_packet_t* inpkt,
-                                 coap_packet_t* outpkt,
-                                 uint8_t id_hi, uint8_t id_lo);
-
-static int handle_greet(coap_rw_buffer_t* scratch,
-                        const coap_packet_t* inpkt,
-                        coap_packet_t* outpkt,
-                        uint8_t id_hi, uint8_t id_lo);
-
-static int handle_temperature(coap_rw_buffer_t* scratch,
-                              const coap_packet_t* inpkt,
-                              coap_packet_t* outpkt,
-                              uint8_t id_hi, uint8_t id_lo);
 
 static const coap_endpoint_path_t path_well_known_core = { 2, { ".well-known", "core" } };
 
@@ -55,6 +30,12 @@ const coap_endpoint_t endpoints[] = {
   /* marks the end of the endpoints array: */
   { (coap_method_t)0, NULL, NULL, NULL }
 };
+
+int (*dataHandler)(coap_rw_buffer_t*,
+                   const coap_packet_t*,
+                   coap_packet_t*,
+                   uint8_t, uint8_t) = NULL;
+
 
 static int handle_get_well_known_core(coap_rw_buffer_t* scratch,
                                       const coap_packet_t* inpkt, coap_packet_t* outpkt,
@@ -147,14 +128,25 @@ static int handle_greet(coap_rw_buffer_t* scratch,
                             COAP_CONTENTTYPE_TEXT_PLAIN);
 }
 
-static int handle_temperature(coap_rw_buffer_t* scratch,
-                              const coap_packet_t* inpkt, coap_packet_t* outpkt,
-                              uint8_t id_hi, uint8_t id_lo)
+static int set_data_handler(int (*functionPtr)(coap_rw_buffer_t*,
+                            const coap_packet_t*,
+                            coap_packet_t*,
+                            uint8_t, uint8_t))
+{
+  dataHandler = functionPtr;
+}
+
+
+
+static int handle_data(coap_rw_buffer_t* scratch,
+                       const coap_packet_t* inpkt, coap_packet_t* outpkt,
+                       uint8_t id_hi, uint8_t id_lo)
 {
   (void)scratch;
   (void)outpkt;
   (void)id_hi;
   (void)id_lo;
+
 
   coap_buffer_t payload = inpkt->payload;
 

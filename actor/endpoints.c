@@ -1,8 +1,10 @@
+#include "endpoints.h"
+
 #include <coap.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include "temperature_manager.h"
+
 
 #define MAX_RESPONSE_LEN 500
 static uint8_t response[MAX_RESPONSE_LEN] = { 0 };
@@ -22,10 +24,25 @@ static int handle_greet(coap_rw_buffer_t* scratch,
                         coap_packet_t* outpkt,
                         uint8_t id_hi, uint8_t id_lo);
 
-static int handle_temperature(coap_rw_buffer_t* scratch,
-                              const coap_packet_t* inpkt,
-                              coap_packet_t* outpkt,
-                              uint8_t id_hi, uint8_t id_lo);
+static int handle_configuration(coap_rw_buffer_t* scratch,
+                                const coap_packet_t* inpkt,
+                                coap_packet_t* outpkt,
+                                uint8_t id_hi, uint8_t id_lo);
+
+static int handle_data(coap_rw_buffer_t* scratch,
+                       const coap_packet_t* inpkt,
+                       coap_packet_t* outpkt,
+                       uint8_t id_hi, uint8_t id_lo);
+
+static int default_handler(coap_rw_buffer_t* scratch,
+                           const coap_packet_t* inpkt,
+                           coap_packet_t* outpkt,
+                           uint8_t id_hi, uint8_t id_lo);
+
+int (*dataHandler)(coap_rw_buffer_t*,
+                   const coap_packet_t*,
+                   coap_packet_t*,
+                   uint8_t, uint8_t) = &default_handler;
 
 static const coap_endpoint_path_t path_well_known_core = { 2, { ".well-known", "core" } };
 
@@ -33,7 +50,9 @@ static const coap_endpoint_path_t path_riot_board = { 2, { "riot", "board" } };
 
 static const coap_endpoint_path_t path_greet = { 1, { "greet"} };
 
-static const coap_endpoint_path_t path_temperature = { 1, { "temperature"} };
+static const coap_endpoint_path_t path_config = { 1, { "configuration"} };
+
+static const coap_endpoint_path_t path_data = { 1, { "data"} };
 
 const coap_endpoint_t endpoints[] = {
   {
@@ -49,8 +68,12 @@ const coap_endpoint_t endpoints[] = {
     &path_greet,      "ct=0"
   },
   {
-    COAP_METHOD_POST,  handle_temperature,
-    &path_temperature,      "ct=0" // JSON: "ct=50" ?
+    COAP_METHOD_POST,  handle_data,
+    &path_data,      "ct=0"
+  },
+  {
+    COAP_METHOD_POST,  handle_configuration,
+    &path_config,      "ct=0"
   },
   /* marks the end of the endpoints array: */
   { (coap_method_t)0, NULL, NULL, NULL }
@@ -147,9 +170,9 @@ static int handle_greet(coap_rw_buffer_t* scratch,
                             COAP_CONTENTTYPE_TEXT_PLAIN);
 }
 
-static int handle_temperature(coap_rw_buffer_t* scratch,
-                              const coap_packet_t* inpkt, coap_packet_t* outpkt,
-                              uint8_t id_hi, uint8_t id_lo)
+static int handle_configuration(coap_rw_buffer_t* scratch,
+                                const coap_packet_t* inpkt, coap_packet_t* outpkt,
+                                uint8_t id_hi, uint8_t id_lo)
 {
   (void)scratch;
   (void)outpkt;
@@ -166,7 +189,40 @@ static int handle_temperature(coap_rw_buffer_t* scratch,
   strncpy(payloadString, plaintext, payload.len);
   payloadString[payload.len] = '\0';
 
-  manage_temperature(atoi(payloadString));
+
 
   return 0;
+}
+
+int set_data_handler(int (*functionPtr)(coap_rw_buffer_t*,
+                                        const coap_packet_t*,
+                                        coap_packet_t*,
+                                        uint8_t, uint8_t))
+{
+  puts("DataHandler was set!");
+  dataHandler = functionPtr;
+
+  return 0;
+}
+
+int default_handler(coap_rw_buffer_t* scratch,
+                    const coap_packet_t* inpkt, coap_packet_t* outpkt,
+                    uint8_t id_hi, uint8_t id_lo)
+{
+  (void)scratch;
+  (void)outpkt;
+  (void)inpkt;
+  (void)id_hi;
+  (void)id_lo;
+
+  puts("Received Data!");
+
+  return 0;
+}
+
+static int handle_data(coap_rw_buffer_t* scratch,
+                       const coap_packet_t* inpkt, coap_packet_t* outpkt,
+                       uint8_t id_hi, uint8_t id_lo)
+{
+  return dataHandler(scratch, inpkt, outpkt, id_hi, id_lo);
 }
