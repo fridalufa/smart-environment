@@ -194,13 +194,13 @@ static int handle_configuration(coap_rw_buffer_t* scratch,
   return 0;
 }
 
-int set_data_handler(int (*functionPtr)(coap_rw_buffer_t*,
-                                        const coap_packet_t*,
-                                        coap_packet_t*,
-                                        uint8_t, uint8_t))
+int set_data_handler(int (*handleData)(coap_rw_buffer_t*,
+                                       const coap_packet_t*,
+                                       coap_packet_t*,
+                                       uint8_t, uint8_t))
 {
   puts("DataHandler was set!");
-  dataHandler = functionPtr;
+  dataHandler = handleData;
 
   return 0;
 }

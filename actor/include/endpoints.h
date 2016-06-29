@@ -8,9 +8,8 @@
 
 #define MAX_RESPONSE_LEN 500
 
-int set_data_handler(int (*handle)(coap_rw_buffer_t*,
-
-                                   const coap_packet_t*,
-                                   coap_packet_t*,
-                                   uint8_t, uint8_t));
+int set_data_handler(int (*handleData)(coap_rw_buffer_t*,
+                                       const coap_packet_t*,
+                                       coap_packet_t*,
+                                       uint8_t, uint8_t));
 #endif

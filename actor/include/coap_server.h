@@ -12,9 +12,9 @@
 #endif
 #include "debug.h"
 
-void coap_server_loop(int (*handle)(coap_rw_buffer_t*,
-                                    const coap_packet_t*,
-                                    coap_packet_t*,
-                                    uint8_t, uint8_t));
+void coap_server_loop(int (*handleData)(coap_rw_buffer_t*,
+                                        const coap_packet_t*,
+                                        coap_packet_t*,
+                                        uint8_t, uint8_t));
 
 #endif
