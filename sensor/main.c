@@ -188,9 +188,22 @@ int send_temperature(int argc, char** argv)
     return 0;
 }
 
+void announce_sensor(char* targetAddr, char* sensorIdentifier)
+{
+    ipv6_addr_t target;
+    ipv6_addr_from_str(&target, targetAddr);
+
+    coap_client_send(&target, COAP_METHOD_POST, COAP_TYPE_NONCON, "announce", sensorIdentifier, COAP_CONTENTTYPE_TEXT_PLAIN);
+}
+
 void* temp_thread(void* arg)
 {
     (void)arg;
+
+    // Maybe the identifier should be changed to something unique
+    // if there are more sensor nodes
+    announce_sensor(MULTICAST_ADDR, "temperature sensor");
+
     while (1) {
         char* args[] = {"temperature", MULTICAST_ADDR};
         send_temperature(2, args);
