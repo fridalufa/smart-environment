@@ -42,9 +42,13 @@ int handleData(coap_rw_buffer_t* scratch,
 {
     int temperature = getTemperature(scratch, inpkt, outpkt, id_hi, id_lo);
 
+    printf("Received temperature %d\n", temperature);
+
     addValue(temperature);
 
-    float average_temp = getAverage();
+    int average_temp = getSum() / getCount();
+
+    printf("Average Tempertature: %d\n", average_temp);
 
     if (average_temp < YELLOW_TEMP * 100) {
         setLed(LEDGREEN_PIN);

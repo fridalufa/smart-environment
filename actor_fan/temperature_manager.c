@@ -27,7 +27,7 @@ int handleData(coap_rw_buffer_t* scratch,
 
     addValue(temperature);
 
-    int average_temp = getAverage();
+    int average_temp = getSum() / getCount();
 
     if (average_temp < FAN_LOW_TEMP * 100) {
         pwm_set(FAN_DEVICE, FAN_CHAN, (int)(STEPS / 2.5));
