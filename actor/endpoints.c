@@ -24,10 +24,10 @@ static int handle_greet(coap_rw_buffer_t* scratch,
                         coap_packet_t* outpkt,
                         uint8_t id_hi, uint8_t id_lo);
 
-static int handle_configuration(coap_rw_buffer_t* scratch,
-                                const coap_packet_t* inpkt,
-                                coap_packet_t* outpkt,
-                                uint8_t id_hi, uint8_t id_lo);
+static int handle_config(coap_rw_buffer_t* scratch,
+                         const coap_packet_t* inpkt,
+                         coap_packet_t* outpkt,
+                         uint8_t id_hi, uint8_t id_lo);
 
 static int handle_data(coap_rw_buffer_t* scratch,
                        const coap_packet_t* inpkt,
@@ -39,10 +39,8 @@ static int default_handler(coap_rw_buffer_t* scratch,
                            coap_packet_t* outpkt,
                            uint8_t id_hi, uint8_t id_lo);
 
-int (*dataHandler)(coap_rw_buffer_t*,
-                   const coap_packet_t*,
-                   coap_packet_t*,
-                   uint8_t, uint8_t) = &default_handler;
+DataHandler dataHandler = &default_handler;
+ConfigHandler configHandler = &default_handler;
 
 static const coap_endpoint_path_t path_well_known_core = { 2, { ".well-known", "core" } };
 
@@ -72,7 +70,7 @@ const coap_endpoint_t endpoints[] = {
     &path_data,      "ct=0"
   },
   {
-    COAP_METHOD_POST,  handle_configuration,
+    COAP_METHOD_POST,  handle_config,
     &path_config,      "ct=0"
   },
   /* marks the end of the endpoints array: */
@@ -170,37 +168,18 @@ static int handle_greet(coap_rw_buffer_t* scratch,
                             COAP_CONTENTTYPE_TEXT_PLAIN);
 }
 
-static int handle_configuration(coap_rw_buffer_t* scratch,
-                                const coap_packet_t* inpkt, coap_packet_t* outpkt,
-                                uint8_t id_hi, uint8_t id_lo)
+int set_data_handler(DataHandler dh)
 {
-  (void)scratch;
-  (void)outpkt;
-  (void)id_hi;
-  (void)id_lo;
-
-  coap_buffer_t payload = inpkt->payload;
-
-  const char* plaintext = (char*) payload.p;
-
-  // It is important, to take the length information of the payload buffer into account.
-  // Otherwise there may be more characters before there is a null termination.
-  char payloadString[payload.len + 1];
-  strncpy(payloadString, plaintext, payload.len);
-  payloadString[payload.len] = '\0';
-
-
+  puts("DataHandler was set!");
+  dataHandler = dh;
 
   return 0;
 }
 
-int set_data_handler(int (*handleData)(coap_rw_buffer_t*,
-                                       const coap_packet_t*,
-                                       coap_packet_t*,
-                                       uint8_t, uint8_t))
+int set_config_handler(ConfigHandler ch)
 {
-  puts("DataHandler was set!");
-  dataHandler = handleData;
+  puts("ConfigHandler was set!");
+  configHandler = ch;
 
   return 0;
 }
@@ -225,4 +204,11 @@ static int handle_data(coap_rw_buffer_t* scratch,
                        uint8_t id_hi, uint8_t id_lo)
 {
   return dataHandler(scratch, inpkt, outpkt, id_hi, id_lo);
+}
+
+static int handle_config(coap_rw_buffer_t* scratch,
+                         const coap_packet_t* inpkt, coap_packet_t* outpkt,
+                         uint8_t id_hi, uint8_t id_lo)
+{
+  return configHandler(scratch, inpkt, outpkt, id_hi, id_lo);
 }

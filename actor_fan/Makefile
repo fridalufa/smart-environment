@@ -60,4 +60,8 @@ EXTERNAL_MODULE_DIRS += $(CURDIR)/../shared
 USEMODULE += smart-environment-shared
 INCLUDES += -I$(CURDIR)/../shared/include
 
+EXTERNAL_MODULE_DIRS += $(CURDIR)/../actor
+USEMODULE += smart-environment-actor
+INCLUDES += -I$(CURDIR)/../actor/include
+
 include $(RIOTBASE)/Makefile.include

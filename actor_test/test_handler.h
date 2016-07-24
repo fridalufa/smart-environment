@@ -11,4 +11,9 @@ int handleData(coap_rw_buffer_t* scratch,
                coap_packet_t* outpkt,
                uint8_t id_hi, uint8_t id_lo);
 
+int handleConfig(coap_rw_buffer_t* scratch,
+                 const coap_packet_t* inpkt,
+                 coap_packet_t* outpkt,
+                 uint8_t id_hi, uint8_t id_lo);
+
 #endif

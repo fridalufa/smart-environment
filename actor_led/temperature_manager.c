@@ -1,30 +1,50 @@
 #include "temperature_manager.h"
-#include "periph/gpio.h"
-#include <stdio.h>
 
-static float temperatureWindow[WINDOW_SIZE];
-static int record_count = 0;
-static int current_index = 0;
-
-int manage_temperature(int temperature)
+int setLed(gpio_t led)
 {
-    if (record_count < WINDOW_SIZE) {
-        record_count++;
-    }
-    if (current_index == WINDOW_SIZE) {
-        current_index = 0;
-    }
+    (void) led;
+    gpio_clear(LEDRED_PIN);
+    gpio_clear(LEDYELLOW_PIN);
+    gpio_clear(LEDGREEN_PIN);
 
-    temperatureWindow[current_index++] = temperature;
+    gpio_set(led);
 
-    int i;
+    return 0;
+}
 
-    float temperature_sum = 0;
-    for (i = 0; i < record_count; i++) {
-        temperature_sum += temperatureWindow[i];
-    }
+int getTemperature(coap_rw_buffer_t* scratch,
+                   const coap_packet_t* inpkt,
+                   coap_packet_t* outpkt,
+                   uint8_t id_hi, uint8_t id_lo)
+{
+    (void)scratch;
+    (void)outpkt;
+    (void)id_hi;
+    (void)id_lo;
 
-    int average_temp = temperature_sum / record_count;
+    coap_buffer_t payload = inpkt->payload;
+
+    const char* plaintext = (char*) payload.p;
+
+    // It is important, to take the length information of the payload buffer into account.
+    // Otherwise there may be more characters before there is a null termination.
+    char payloadString[payload.len + 1];
+    strncpy(payloadString, plaintext, payload.len);
+    payloadString[payload.len] = '\0';
+
+    return atoi(payloadString);
+}
+
+int handleData(coap_rw_buffer_t* scratch,
+               const coap_packet_t* inpkt,
+               coap_packet_t* outpkt,
+               uint8_t id_hi, uint8_t id_lo)
+{
+    int temperature = getTemperature(scratch, inpkt, outpkt, id_hi, id_lo);
+
+    addValue(temperature);
+
+    float average_temp = getAverage();
 
     if (average_temp < YELLOW_TEMP * 100) {
         setLed(LEDGREEN_PIN);
@@ -39,13 +59,16 @@ int manage_temperature(int temperature)
     return 0;
 }
 
-int setLed(gpio_t led)
+int handleConfig(coap_rw_buffer_t* scratch,
+                 const coap_packet_t* inpkt,
+                 coap_packet_t* outpkt,
+                 uint8_t id_hi, uint8_t id_lo)
 {
-    gpio_clear(LEDRED_PIN);
-    gpio_clear(LEDYELLOW_PIN);
-    gpio_clear(LEDGREEN_PIN);
-
-    gpio_set(led);
+    (void) scratch;
+    (void) inpkt;
+    (void) outpkt;
+    (void) id_hi;
+    (void) id_lo;
 
     return 0;
 }

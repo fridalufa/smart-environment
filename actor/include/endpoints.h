@@ -5,11 +5,10 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include "coap_server.h"
 
 #define MAX_RESPONSE_LEN 500
 
-int set_data_handler(int (*handleData)(coap_rw_buffer_t*,
-                                       const coap_packet_t*,
-                                       coap_packet_t*,
-                                       uint8_t, uint8_t));
+int set_data_handler(DataHandler dh);
+int set_config_handler(DataHandler dh);
 #endif

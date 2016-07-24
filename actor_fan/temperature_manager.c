@@ -16,27 +16,18 @@ uint32_t init_fan(void)
 
     return freq;
 }
-
-int manage_temperature(int temperature)
+int handleData(coap_rw_buffer_t* scratch,
+               const coap_packet_t* inpkt,
+               coap_packet_t* outpkt,
+               uint8_t id_hi, uint8_t id_lo)
 {
+    int temperature = getTemperature(scratch, inpkt, outpkt, id_hi, id_lo);
+
     printf("Received temperature %d\n", temperature);
-    if (record_count < WINDOW_SIZE) {
-        record_count++;
-    }
-    if (current_index == WINDOW_SIZE) {
-        current_index = 0;
-    }
 
-    temperatureWindow[current_index++] = temperature;
+    addValue(temperature);
 
-    int i;
-
-    float temperature_sum = 0;
-    for (i = 0; i < record_count; i++) {
-        temperature_sum += temperatureWindow[i];
-    }
-
-    int average_temp = temperature_sum / record_count;
+    int average_temp = getAverage();
 
     if (average_temp < FAN_LOW_TEMP * 100) {
         pwm_set(FAN_DEVICE, FAN_CHAN, (int)(STEPS / 2.5));
@@ -47,6 +38,20 @@ int manage_temperature(int temperature)
             pwm_set(FAN_DEVICE, FAN_CHAN, STEPS - (STEPS / 10));
         }
     }
+
+    return 0;
+}
+
+int handleConfig(coap_rw_buffer_t* scratch,
+                 const coap_packet_t* inpkt,
+                 coap_packet_t* outpkt,
+                 uint8_t id_hi, uint8_t id_lo)
+{
+    (void) scratch;
+    (void) inpkt;
+    (void) outpkt;
+    (void) id_hi;
+    (void) id_lo;
 
     return 0;
 }

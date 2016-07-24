@@ -1,6 +1,10 @@
 #ifndef TEMPARATURE_MAN_H
 #define TEMPARATURE_MAN_H
 
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <coap.h>
 #include "periph/gpio.h"
 #include "periph/pwm.h"
 
@@ -19,7 +23,14 @@
 
 #define FAN_PIN            GPIO_PIN(PA, 15)
 
-int manage_temperature(int temperature);
+int handleData(coap_rw_buffer_t* scratch,
+               const coap_packet_t* inpkt,
+               coap_packet_t* outpkt,
+               uint8_t id_hi, uint8_t id_lo);
+int handleConfig(coap_rw_buffer_t* scratch,
+                 const coap_packet_t* inpkt,
+                 coap_packet_t* outpkt,
+                 uint8_t id_hi, uint8_t id_lo);
 uint32_t init_fan(void);
 
 #endif

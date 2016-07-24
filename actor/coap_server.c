@@ -8,17 +8,17 @@ coap_rw_buffer_t scratch_buf = { scratch_raw, sizeof(scratch_raw) };
 
 #define COAP_SERVER_PORT    (5683)
 
-void coap_server_loop(int (*handleData)(coap_rw_buffer_t*,
-                                        const coap_packet_t*,
-                                        coap_packet_t*,
-                                        uint8_t, uint8_t))
+void coap_server_loop(DataHandler dh, ConfigHandler ch)
 {
     uint8_t laddr[16] = { 0 };
     uint8_t raddr[16] = { 0 };
     size_t raddr_len;
     uint16_t rport;
 
-    set_data_handler(handleData);
+    (void) ch;
+
+    set_data_handler(dh);
+    set_config_handler(ch);
 
     conn_udp_t conn;
 
