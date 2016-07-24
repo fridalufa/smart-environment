@@ -1,8 +1,10 @@
+#include "endpoints.h"
+
 #include <coap.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include "temperature_manager.h"
+
 
 #define MAX_RESPONSE_LEN 500
 static uint8_t response[MAX_RESPONSE_LEN] = { 0 };
@@ -22,10 +24,23 @@ static int handle_greet(coap_rw_buffer_t* scratch,
                         coap_packet_t* outpkt,
                         uint8_t id_hi, uint8_t id_lo);
 
-static int handle_temperature(coap_rw_buffer_t* scratch,
-                              const coap_packet_t* inpkt,
-                              coap_packet_t* outpkt,
-                              uint8_t id_hi, uint8_t id_lo);
+static int handle_config(coap_rw_buffer_t* scratch,
+                         const coap_packet_t* inpkt,
+                         coap_packet_t* outpkt,
+                         uint8_t id_hi, uint8_t id_lo);
+
+static int handle_data(coap_rw_buffer_t* scratch,
+                       const coap_packet_t* inpkt,
+                       coap_packet_t* outpkt,
+                       uint8_t id_hi, uint8_t id_lo);
+
+static int default_handler(coap_rw_buffer_t* scratch,
+                           const coap_packet_t* inpkt,
+                           coap_packet_t* outpkt,
+                           uint8_t id_hi, uint8_t id_lo);
+
+DataHandler dataHandler = &default_handler;
+ConfigHandler configHandler = &default_handler;
 
 static const coap_endpoint_path_t path_well_known_core = { 2, { ".well-known", "core" } };
 
@@ -33,7 +48,9 @@ static const coap_endpoint_path_t path_riot_board = { 2, { "riot", "board" } };
 
 static const coap_endpoint_path_t path_greet = { 1, { "greet"} };
 
-static const coap_endpoint_path_t path_temperature = { 1, { "temperature"} };
+static const coap_endpoint_path_t path_config = { 1, { "configuration"} };
+
+static const coap_endpoint_path_t path_data = { 1, { "data"} };
 
 const coap_endpoint_t endpoints[] = {
   {
@@ -49,8 +66,12 @@ const coap_endpoint_t endpoints[] = {
     &path_greet,      "ct=0"
   },
   {
-    COAP_METHOD_POST,  handle_temperature,
-    &path_temperature,      "ct=0" // JSON: "ct=50" ?
+    COAP_METHOD_POST,  handle_data,
+    &path_data,      "ct=0"
+  },
+  {
+    COAP_METHOD_POST,  handle_config,
+    &path_config,      "ct=0"
   },
   /* marks the end of the endpoints array: */
   { (coap_method_t)0, NULL, NULL, NULL }
@@ -147,26 +168,47 @@ static int handle_greet(coap_rw_buffer_t* scratch,
                             COAP_CONTENTTYPE_TEXT_PLAIN);
 }
 
-static int handle_temperature(coap_rw_buffer_t* scratch,
-                              const coap_packet_t* inpkt, coap_packet_t* outpkt,
-                              uint8_t id_hi, uint8_t id_lo)
+int set_data_handler(DataHandler dh)
+{
+  puts("DataHandler was set!");
+  dataHandler = dh;
+
+  return 0;
+}
+
+int set_config_handler(ConfigHandler ch)
+{
+  puts("ConfigHandler was set!");
+  configHandler = ch;
+
+  return 0;
+}
+
+int default_handler(coap_rw_buffer_t* scratch,
+                    const coap_packet_t* inpkt, coap_packet_t* outpkt,
+                    uint8_t id_hi, uint8_t id_lo)
 {
   (void)scratch;
   (void)outpkt;
+  (void)inpkt;
   (void)id_hi;
   (void)id_lo;
 
-  coap_buffer_t payload = inpkt->payload;
-
-  const char* plaintext = (char*) payload.p;
-
-  // It is important, to take the length information of the payload buffer into account.
-  // Otherwise there may be more characters before there is a null termination.
-  char payloadString[payload.len + 1];
-  strncpy(payloadString, plaintext, payload.len);
-  payloadString[payload.len] = '\0';
-
-  manage_temperature(atoi(payloadString));
+  puts("Received Data!");
 
   return 0;
+}
+
+static int handle_data(coap_rw_buffer_t* scratch,
+                       const coap_packet_t* inpkt, coap_packet_t* outpkt,
+                       uint8_t id_hi, uint8_t id_lo)
+{
+  return dataHandler(scratch, inpkt, outpkt, id_hi, id_lo);
+}
+
+static int handle_config(coap_rw_buffer_t* scratch,
+                         const coap_packet_t* inpkt, coap_packet_t* outpkt,
+                         uint8_t id_hi, uint8_t id_lo)
+{
+  return configHandler(scratch, inpkt, outpkt, id_hi, id_lo);
 }

@@ -70,7 +70,7 @@ fi
 
 # determine paths of the smart environment project and RIOT
 SMART_ENVIRONMENT_PATH=$(readlink -f "$(dirname $(readlink -f $0))/..")
-SMART_ENV_ACTOR_PATH=$(readlink -f $SMART_ENVIRONMENT_PATH/actor)
+SMART_ENV_ACTOR_PATH=$(readlink -f $SMART_ENVIRONMENT_PATH/actor_test)
 SMART_ENV_SENSOR_PATH=$(readlink -f $SMART_ENVIRONMENT_PATH/sensor)
 RIOT_PATH=$(readlink -f "$SMART_ENVIRONMENT_PATH/../RIOT")
 

@@ -7,7 +7,7 @@
 ####
 
 # Set the name of your application:
-APPLICATION = smart-environment-actor
+APPLICATION = smart-environment-actor-led
 
 # If no BOARD is found in the environment, use this default:
 BOARD ?= native
@@ -43,6 +43,10 @@ USEMODULE += gnrc_conn_udp
 USEPKG += microcoap
 CFLAGS += -DMICROCOAP_DEBUG
 
+# CBOR
+USEMODULE += cbor
+CFLAGS += -DCBOR_NO_PRINT
+
 # Comment this out to disable code in RIOT that does safety checking
 # which is not needed in a production environment but helps in the
 # development process:
@@ -59,5 +63,9 @@ QUIET ?= 1
 EXTERNAL_MODULE_DIRS += $(CURDIR)/../shared
 USEMODULE += smart-environment-shared
 INCLUDES += -I$(CURDIR)/../shared/include
+
+EXTERNAL_MODULE_DIRS += $(CURDIR)/../actor
+USEMODULE += smart-environment-actor
+INCLUDES += -I$(CURDIR)/../actor/include
 
 include $(RIOTBASE)/Makefile.include

@@ -96,7 +96,7 @@ static void* _coap_server_thread(void* arg)
     msg_init_queue(_server_msg_queue, SERVER_QUEUE_SIZE);
     puts("Launching server loop");
 
-    coap_server_loop();
+    coap_server_loop(handleData, handleConfig);
 
     return NULL;
 }
