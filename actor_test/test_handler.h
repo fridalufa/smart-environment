@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <coap.h>
+#include "cbor.h"
 
 int handleData(coap_rw_buffer_t* scratch,
                const coap_packet_t* inpkt,

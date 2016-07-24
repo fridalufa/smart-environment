@@ -2,9 +2,8 @@
 #include "periph/gpio.h"
 #include <stdio.h>
 
-static float temperatureWindow[WINDOW_SIZE];
-static int record_count = 0;
-static int current_index = 0;
+int FAN_LOW_TEMP = DEFAULT_FAN_LOW_TEMP;
+int FAN_TEMP = DEFAULT_FAN_TEMP;
 
 uint32_t init_fan(void)
 {
@@ -47,11 +46,49 @@ int handleConfig(coap_rw_buffer_t* scratch,
                  coap_packet_t* outpkt,
                  uint8_t id_hi, uint8_t id_lo)
 {
-    (void) scratch;
-    (void) inpkt;
-    (void) outpkt;
-    (void) id_hi;
-    (void) id_lo;
+    (void)scratch;
+    (void)outpkt;
+    (void)id_hi;
+    (void)id_lo;
+
+    coap_buffer_t payload = inpkt->payload;
+    unsigned char* data = (unsigned char*) payload.p;
+
+    // create cbor stream
+    cbor_stream_t stream = {data, sizeof(data), 0};
+
+    size_t map_length;
+    // read out length of the map
+    size_t offset = cbor_deserialize_map(&stream, 0, &map_length);
+    int key1, key2, key3;
+    char medtemp[8], hightemp[8], windowsize[8];
+    // read key 1
+    offset += cbor_deserialize_int(&stream, offset, &key1);
+    // read medtemp
+    offset += cbor_deserialize_byte_string(&stream, offset, medtemp, sizeof(medtemp));
+    // read key 2
+    offset += cbor_deserialize_int(&stream, offset, &key2);
+    // read hightemp
+    offset += cbor_deserialize_byte_string(&stream, offset, hightemp, sizeof(hightemp));
+    // read key 3
+    offset += cbor_deserialize_int(&stream, offset, &key3);
+    // read windowsize
+    offset += cbor_deserialize_byte_string(&stream, offset, windowsize, sizeof(windowsize));
+
+    cbor_destroy(&stream);
+
+    puts("NEW CONFIGURATION RECEIVED");
+
+    FAN_LOW_TEMP = atoi(medtemp);
+    FAN_TEMP = atoi(hightemp);
+
+    printf("FAN_LOW_TEMP set to: %d\n", FAN_LOW_TEMP);
+    printf("FAN_TEMP set to: %d\n", FAN_TEMP);
+
+    if (strcmp(windowsize, "-") != 0) {
+        printf("Set windowsize to: %d\n", windowsize);
+        setWindowSize(atoi(windowsize));
+    }
 
     return 0;
 }

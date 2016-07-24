@@ -43,6 +43,10 @@ USEMODULE += gnrc_conn_udp
 USEPKG += microcoap
 CFLAGS += -DMICROCOAP_DEBUG
 
+# CBOR
+USEMODULE += cbor
+CFLAGS += -DCBOR_NO_PRINT
+
 # Comment this out to disable code in RIOT that does safety checking
 # which is not needed in a production environment but helps in the
 # development process:

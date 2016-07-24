@@ -5,13 +5,15 @@
 #include <stdio.h>
 #include <string.h>
 #include <coap.h>
+#include "slidingwindow.h"
+#include "cbor.h"
 #include "periph/gpio.h"
 #include "periph/pwm.h"
 
 #define WINDOW_SIZE (1)
 
-#define FAN_LOW_TEMP (30)
-#define FAN_TEMP (33)
+#define DEFAULT_FAN_LOW_TEMP (30)
+#define DEFAULT_FAN_TEMP (33)
 
 // PWM Konfiguration - Should be revisited because of strange noises
 #define MODE        PWM_LEFT

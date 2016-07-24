@@ -28,6 +28,7 @@ int coap_client(int argc, char** argv);
 int greet(int argc, char** argv);
 int mkroot(int argc, char** argv);
 int cbor_test(int argc, char** argv);
+int configure(int argc, char** argv);
 int temp(int argc, char** argv);
 int send_temperature(int argc, char** argv);
 void* temp_thread(void* arg);
@@ -42,6 +43,7 @@ static const shell_command_t shell_commands[] = {
     { "greet", "Let the server greet you via a CoAP POST request", greet },
     { "mkroot", "Make this node root of the rpl", mkroot },
     { "cbor", "Create a test cbor payload", cbor_test},
+    { "configure", "Send configuration to actor", configure},
     { "temp", "Sense temperature", temp},
     { "temperature", "Send temperature to server", send_temperature },
     { NULL, NULL, NULL }
@@ -149,6 +151,38 @@ int cbor_test(int argc, char** argv)
     cbor_deserialize_int(&stream, 0, &result);
 
     printf("Fetched number: %d\n", result);
+
+    return 0;
+}
+
+int configure(int argc, char** argv)
+{
+    if (argc < 4) {
+        printf("Usage: %s <server or multicast address> <medtemp> <hightemp> (<windowsize>)\n", argv[0]);
+        return 1;
+    }
+
+    cbor_clear(&stream);
+    cbor_init(&stream, stream_data, sizeof(stream_data));
+
+    cbor_serialize_map(&stream, 3); // map of length 2 follows
+    cbor_serialize_int(&stream, 1); // write key 1
+    cbor_serialize_byte_string(&stream, argv[2]); // write medtemp
+    cbor_serialize_int(&stream, 2); // write key 2
+    cbor_serialize_byte_string(&stream, argv[3]); // write hightemp
+    cbor_serialize_int(&stream, 3); // write key 2
+    if (argc < 5) {
+        cbor_serialize_byte_string(&stream, "-"); // write windowsize
+    } else {
+        cbor_serialize_byte_string(&stream, argv[4]); // write windowsize
+    }
+
+    cbor_destroy(&stream);
+
+    ipv6_addr_t target;
+    ipv6_addr_from_str(&target, argv[1]);
+
+    coap_client_send(&target, COAP_METHOD_POST, COAP_TYPE_NONCON, "configuration", (char*)stream_data, COAP_CONTENTTYPE_TEXT_PLAIN);
 
     return 0;
 }

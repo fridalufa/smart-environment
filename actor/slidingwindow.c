@@ -18,7 +18,7 @@ void initWindow(int size)
         if (window != NULL) {
             initialized = 1;
         } else {
-            puts("Could not allocate memory for sliding window!");
+            puts("Could not allocate memory for sliding window!\n");
             exit(1);
         }
     } else {
@@ -42,13 +42,13 @@ void setWindowSize(int size)
         window = new_window;
     } else {
         free(window);
-        puts("Could not reallocate memory for sliding window!");
+        puts("Could not reallocate memory for sliding window!\n");
         exit(1);
     }
     record_count = 0;
     current_index = 0;
 
-    printf("Set window size to %d\n", size);
+    printf("WINDOWSIZE set to %d\n", size);
 }
 
 void addValue(int value)
@@ -91,7 +91,7 @@ float getAverage(void)
         return ((float)getSum()) / getCount();
     } else {
         free(window);
-        puts("Division by zero. Add values to window before calling this function!");
+        puts("Division by zero. Add values to window before calling this function!\n");
         exit(1);
     }
 }
