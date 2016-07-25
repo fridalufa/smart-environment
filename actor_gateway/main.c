@@ -130,13 +130,13 @@ int registerGateway(int argc, char** argv)
 
     cbor_serialize_array(&stream, 2); // map of length 2 follows
     // TODO: cbor_serialize_byte_string(&stream, argv[0]); // write device id
-    cbor_serialize_byte_string(&stream, "1"); // write device id
+    cbor_serialize_unicode_string(&stream, "1"); // write device id
 
     // ["Temperatur", "float"]
     cbor_serialize_array(&stream, 2); // map of length 2 follows
 
-    cbor_serialize_byte_string(&stream, "Temperatur"); // write sensor type
-    cbor_serialize_byte_string(&stream, "float"); // write value type
+    cbor_serialize_unicode_string(&stream, "Temperatur"); // write sensor type
+    cbor_serialize_unicode_string(&stream, "float"); // write value type
 
     cbor_destroy(&stream);
 
