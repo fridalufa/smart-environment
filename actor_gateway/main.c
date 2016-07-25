@@ -23,7 +23,13 @@ static char _rcv_stack_buf[THREAD_STACKSIZE_DEFAULT];
 char* rpl_root_addr = "2001:db8::1";
 kernel_pid_t iface_pid = 6;
 
+static unsigned char stream_data[100];
+static cbor_stream_t stream = {stream_data, sizeof(stream_data), 0};
+
 #define MULTICAST_ADDR "ff02::13"
+
+// TODO: resolve address
+#define EXTERNAL_SERVER_ADDR "fe80::10af:34ff:feb8:746"
 
 int coap_client(int argc, char** argv);
 int registerGateway(int argc, char** argv);
@@ -86,7 +92,7 @@ static void* _coap_server_thread(void* arg)
     msg_init_queue(_server_msg_queue, SERVER_QUEUE_SIZE);
     puts("Launching server loop");
 
-    coap_server_loop();
+    // coap_server_loop(handleData, handleConfig);
 
     return NULL;
 }
@@ -104,7 +110,7 @@ int coap_client(int argc, char** argv)
 
     coap_client_send(&target, COAP_METHOD_POST, COAP_TYPE_NONCON, "register", NULL, 0);
 
-    // coap_client_receive();
+    coap_client_receive();
 
     return 0;
 }
@@ -112,15 +118,32 @@ int coap_client(int argc, char** argv)
 int registerGateway(int argc, char** argv)
 {
 
-    if (argc < 3) {
-        printf("Usage: %s <server or multicast address> <name>\n", argv[0]);
+    if (argc < 2) {
+        printf("Usage: %s <gateway/device id>\n", argv[0]);
         return 1;
     }
 
-    ipv6_addr_t target;
-    ipv6_addr_from_str(&target, argv[1]);
+    // cbor payload: ["given id“, [„Temperatur“, "float"]]
 
-    coap_client_send(&target, COAP_METHOD_POST, COAP_TYPE_CON, "register", argv[2], COAP_CONTENTTYPE_TEXT_PLAIN);
+    cbor_clear(&stream);
+    cbor_init(&stream, stream_data, sizeof(stream_data));
+
+    cbor_serialize_array(&stream, 2); // map of length 2 follows
+    // TODO: cbor_serialize_byte_string(&stream, argv[0]); // write device id
+    cbor_serialize_byte_string(&stream, "1"); // write device id
+
+    // ["Temperatur", "float"]
+    cbor_serialize_array(&stream, 2); // map of length 2 follows
+
+    cbor_serialize_byte_string(&stream, "Temperatur"); // write sensor type
+    cbor_serialize_byte_string(&stream, "float"); // write value type
+
+    cbor_destroy(&stream);
+
+    ipv6_addr_t target;
+    ipv6_addr_from_str(&target, EXTERNAL_SERVER_ADDR);
+
+    coap_client_send(&target, COAP_METHOD_POST, COAP_TYPE_CON, "register", (char*)stream_data, COAP_CONTENTTYPE_TEXT_PLAIN);
 
     coap_client_receive();
 

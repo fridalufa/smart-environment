@@ -1,6 +1,7 @@
 #include "gateway_handler.h"
 
-int DEFAULT_VALUE = 30;
+static unsigned char stream_data[100];
+static cbor_stream_t stream = {stream_data, sizeof(stream_data), 0};
 
 int handleData(coap_rw_buffer_t* scratch,
                const coap_packet_t* inpkt,
@@ -22,7 +23,27 @@ int handleData(coap_rw_buffer_t* scratch,
     strncpy(payloadString, plaintext, payload.len);
     payloadString[payload.len] = '\0';
 
-    printf("%d\n", atoi(payloadString) + DEFAULT_VALUE);
+    int tempreture = atoi(payloadString);
+
+    cbor_clear(&stream);
+    cbor_init(&stream, stream_data, sizeof(stream_data));
+
+    cbor_serialize_map(&stream, 2); // map of length 2 follows
+    cbor_serialize_int(&stream, 1); // write key 1
+    cbor_serialize_byte_string(&stream, "1"); // write device id
+
+    // ["Temperatur", "float"]
+    cbor_serialize_int(&stream, 2); // write key 2
+    cbor_serialize_float(&stream, (float) tempreture / 1000.0f);
+
+    cbor_destroy(&stream);
+
+    printf("%s\n", (char*) stream_data);
+    // send coap request to java server
+
+    /*
+
+    */
 
     return 0;
 }
