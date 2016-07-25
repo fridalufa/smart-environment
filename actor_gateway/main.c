@@ -10,7 +10,11 @@
 #include "setup.h"
 #include "coap_client.h"
 
-#include "gateway_handler.h"
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <coap.h>
+#include "cbor.h"
 
 #define MAIN_QUEUE_SIZE     (8)
 static msg_t _main_msg_queue[MAIN_QUEUE_SIZE];
@@ -33,12 +37,24 @@ static cbor_stream_t stream = {stream_data, sizeof(stream_data), 0};
 
 int coap_client(int argc, char** argv);
 int registerGateway(int argc, char** argv);
+int sendData(int argc, char** argv);
 int selected_interface(int argc, char** argv);
 int mkroot(int argc, char** argv);
+
+int handleData(coap_rw_buffer_t* scratch,
+               const coap_packet_t* inpkt,
+               coap_packet_t* outpkt,
+               uint8_t id_hi, uint8_t id_lo);
+
+int handleConfig(coap_rw_buffer_t* scratch,
+                 const coap_packet_t* inpkt,
+                 coap_packet_t* outpkt,
+                 uint8_t id_hi, uint8_t id_lo);
 
 static const shell_command_t shell_commands[] = {
     { "coap", "Send a coap request to the server and display response", coap_client },
     { "register", "Let the server register you via a CoAP POST request", registerGateway },
+    { "data", "Sends data to the server via a CoAP PUT request", sendData },
     { "iface", "Show the interface used for network communication", selected_interface },
     { "mkroot", "Make this node root of the rpl", mkroot },
     { NULL, NULL, NULL }
@@ -92,7 +108,7 @@ static void* _coap_server_thread(void* arg)
     msg_init_queue(_server_msg_queue, SERVER_QUEUE_SIZE);
     puts("Launching server loop");
 
-    // coap_server_loop(handleData, handleConfig);
+    coap_server_loop(handleData, handleConfig);
 
     return NULL;
 }
@@ -150,6 +166,37 @@ int registerGateway(int argc, char** argv)
     return 0;
 }
 
+int sendData(int argc, char** argv)
+{
+    if (argc < 2) {
+        printf("Usage: %s <gateway/device id>\n", argv[0]);
+        return 1;
+    }
+
+    // cbor payload: ["given id“, [„Temperatur“, "float"]]
+
+    cbor_clear(&stream);
+    cbor_init(&stream, stream_data, sizeof(stream_data));
+
+    cbor_serialize_array(&stream, 2); // map of length 2 follows
+    // TODO: cbor_serialize_byte_string(&stream, argv[0]); // write device id
+    cbor_serialize_unicode_string(&stream, "1"); // write device id
+
+    cbor_serialize_int(&stream, 2300); // write sensor data (temp)
+
+    cbor_destroy(&stream);
+
+    ipv6_addr_t target;
+    ipv6_addr_from_str(&target, EXTERNAL_SERVER_ADDR);
+
+    coap_client_send(&target, COAP_METHOD_PUT, COAP_TYPE_CON, "data", (char*)stream_data, COAP_CONTENTTYPE_TEXT_PLAIN);
+
+    coap_client_receive();
+
+    return 0;
+}
+
+
 int selected_interface(int argc, char** argv)
 {
     (void)argc;
@@ -171,6 +218,65 @@ int mkroot(int argc, char** argv)
     }
 
     puts("Made this node the rpl root");
+
+    return 0;
+}
+
+
+int handleData(coap_rw_buffer_t* scratch,
+               const coap_packet_t* inpkt,
+               coap_packet_t* outpkt,
+               uint8_t id_hi, uint8_t id_lo)
+{
+    (void)scratch;
+    (void)outpkt;
+    (void)id_hi;
+    (void)id_lo;
+
+    coap_buffer_t payload = inpkt->payload;
+
+    const char* plaintext = (char*) payload.p;
+
+    // It is important, to take the length information of the payload buffer into account.
+    // Otherwise there may be more characters before there is a null termination.
+    char payloadString[payload.len + 1];
+    strncpy(payloadString, plaintext, payload.len);
+    payloadString[payload.len] = '\0';
+
+    int temperature = atoi(payloadString);
+
+    cbor_clear(&stream);
+    cbor_init(&stream, stream_data, sizeof(stream_data));
+
+    cbor_serialize_array(&stream, 2);
+    cbor_serialize_unicode_string(&stream, "1");
+    cbor_serialize_int(&stream, temperature);
+
+    cbor_destroy(&stream);
+
+    ipv6_addr_t target;
+    ipv6_addr_from_str(&target, EXTERNAL_SERVER_ADDR);
+
+    coap_client_send(&target, COAP_METHOD_PUT, COAP_TYPE_CON, "data", (char*)stream_data, COAP_CONTENTTYPE_TEXT_PLAIN);
+
+    coap_client_receive();
+
+    return 0;
+}
+
+int handleConfig(coap_rw_buffer_t* scratch,
+                 const coap_packet_t* inpkt,
+                 coap_packet_t* outpkt,
+                 uint8_t id_hi, uint8_t id_lo)
+{
+    (void)scratch;
+    (void)inpkt;
+    (void)outpkt;
+    (void)id_hi;
+    (void)id_lo;
+
+    //coap_buffer_t payload = inpkt->payload;
+    //unsigned char* data = (unsigned char*) payload.p;
 
     return 0;
 }
