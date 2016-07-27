@@ -3,6 +3,13 @@
 int YELLOW_TEMP = DEFAULT_YELLOW_TEMP;
 int RED_TEMP = DEFAULT_RED_TEMP;
 
+bool is_registered = false;
+
+static unsigned char stream_data[100];
+static cbor_stream_t stream = {stream_data, sizeof(stream_data), 0};
+
+#define EXTERNAL_SERVER_ADDR "fe80::30f8:3bff:fe7b:87c8"
+
 int setLed(gpio_t led)
 {
     (void) led;
@@ -38,6 +45,33 @@ int getTemperature(coap_rw_buffer_t* scratch,
     return atoi(payloadString);
 }
 
+int registerGateway(int argc, char** argv)
+{
+    memset(stream_data, 0, sizeof(stream_data));
+
+    cbor_clear(&stream);
+    cbor_init(&stream, stream_data, sizeof(stream_data));
+
+    cbor_serialize_array(&stream, 2);
+    cbor_serialize_unicode_string(&stream, "1");
+    cbor_serialize_array(&stream, 2);
+    cbor_serialize_unicode_string(&stream, "Temperatur");
+    cbor_serialize_unicode_string(&stream, "float");
+
+    cbor_destroy(&stream);
+
+    ipv6_addr_t target;
+    ipv6_addr_from_str(&target, EXTERNAL_SERVER_ADDR);
+
+    coap_client_send(&target, COAP_METHOD_POST, COAP_TYPE_CON, "register", (char*)stream_data, COAP_CONTENTTYPE_TEXT_PLAIN);
+
+    coap_client_receive();
+
+    is_registered = true;
+
+    return 0;
+}
+
 int handleData(coap_rw_buffer_t* scratch,
                const coap_packet_t* inpkt,
                coap_packet_t* outpkt,
@@ -62,6 +96,28 @@ int handleData(coap_rw_buffer_t* scratch,
             setLed(LEDRED_PIN);
         }
     }
+
+    if (is_registered == false) {
+        return 0;
+    }
+
+    memset(stream_data, 0, sizeof(stream_data));
+
+    cbor_clear(&stream);
+    cbor_init(&stream, stream_data, sizeof(stream_data));
+
+    cbor_serialize_array(&stream, 2);
+    cbor_serialize_unicode_string(&stream, "1");
+    cbor_serialize_int(&stream, 2300);
+
+    cbor_destroy(&stream);
+
+    ipv6_addr_t target;
+    ipv6_addr_from_str(&target, EXTERNAL_SERVER_ADDR);
+
+    coap_client_send(&target, COAP_METHOD_PUT, COAP_TYPE_CON, "data", (char*)stream_data, COAP_CONTENTTYPE_TEXT_PLAIN);
+
+    coap_client_receive();
 
     return 0;
 }
