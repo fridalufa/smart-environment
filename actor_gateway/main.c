@@ -27,13 +27,15 @@ static char _rcv_stack_buf[THREAD_STACKSIZE_DEFAULT];
 char* rpl_root_addr = "2001:db8::1";
 kernel_pid_t iface_pid = 6;
 
+static bool is_registered = false;
+
 static unsigned char stream_data[100];
 static cbor_stream_t stream = {stream_data, sizeof(stream_data), 0};
 
 #define MULTICAST_ADDR "ff02::13"
 
 // TODO: resolve address
-#define EXTERNAL_SERVER_ADDR "fe80::10af:34ff:feb8:746"
+#define EXTERNAL_SERVER_ADDR "fe80::30f8:3bff:fe7b:87c8"
 
 int coap_client(int argc, char** argv);
 int registerGateway(int argc, char** argv);
@@ -163,6 +165,8 @@ int registerGateway(int argc, char** argv)
 
     coap_client_receive();
 
+    is_registered = true;
+
     return 0;
 }
 
@@ -173,7 +177,13 @@ int sendData(int argc, char** argv)
         return 1;
     }
 
+    if (!is_registered) {
+        return 1;
+    }
+
     // cbor payload: ["given id“, [„Temperatur“, "float"]]
+
+    memset(stream_data, 0, sizeof(stream_data));
 
     cbor_clear(&stream);
     cbor_init(&stream, stream_data, sizeof(stream_data));
@@ -244,6 +254,8 @@ int handleData(coap_rw_buffer_t* scratch,
     payloadString[payload.len] = '\0';
 
     int temperature = atoi(payloadString);
+
+    memset(stream_data, 0, sizeof(stream_data));
 
     cbor_clear(&stream);
     cbor_init(&stream, stream_data, sizeof(stream_data));
