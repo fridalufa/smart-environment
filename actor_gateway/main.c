@@ -177,7 +177,7 @@ int sendData(int argc, char** argv)
         return 1;
     }
 
-    if (!is_registered) {
+    if (is_registered == false) {
         return 1;
     }
 

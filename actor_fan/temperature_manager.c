@@ -86,7 +86,7 @@ int handleConfig(coap_rw_buffer_t* scratch,
     printf("FAN_TEMP set to: %d\n", FAN_TEMP);
 
     if (strcmp(windowsize, "-") != 0) {
-        printf("Set windowsize to: %d\n", windowsize);
+        printf("Set windowsize to: %d\n", atoi(windowsize));
         setWindowSize(atoi(windowsize));
     }
 
